@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi Centro de Organización</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --text:#1a1d21; --muted:#6b7280;
+    --border:#e5e7eb; --accent:#4f46e5; --accent-soft:#eef2ff;
+    --ok:#10b981; --danger:#ef4444; --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1115; --card:#171a21; --text:#e6e8eb; --muted:#9aa3af;
+      --border:#272c36; --accent:#818cf8; --accent-soft:#1e2233;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    padding:24px 16px 64px; background:var(--bg); color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.5;
+  }
+  .contenedor{max-width:960px;margin:0 auto}
+  header h1{font-size:1.6rem;margin-bottom:4px}
+  header p{color:var(--muted);font-size:.9rem;margin-bottom:20px}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .tabs button{
+    flex:1 1 auto;min-width:110px;padding:10px 16px;border-radius:10px;
+    border:1px solid var(--border);background:var(--card);color:var(--muted);
+    font-size:.95rem;font-weight:600;cursor:pointer;transition:.15s;
+  }
+  .tabs button:hover{border-color:var(--accent)}
+  .tabs button.activo{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  .panel{display:none}
+  .panel.activo{display:block}
+
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;margin-bottom:14px;
+  }
+  .card h2{font-size:1.05rem;margin-bottom:14px}
+
+  label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:4px}
+  input,textarea,select{
+    width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--border);
+    background:var(--bg);color:var(--text);font-family:inherit;font-size:.92rem;
+  }
+  input:focus,textarea:focus,select:focus{
+    outline:2px solid var(--accent-soft);border-color:var(--accent);
+  }
+  textarea{resize:vertical;min-height:90px}
+
+  .fila{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .fila > div{flex:1 1 180px}
+
+  button.btn{
+    padding:10px 18px;border-radius:9px;border:none;cursor:pointer;
+    background:var(--accent);color:#fff;font-weight:600;font-size:.9rem;
+  }
+  button.btn:hover{filter:brightness(1.1)}
+  button.btn.peligro{
+    background:transparent;border:1px solid var(--danger);color:var(--danger);
+    padding:6px 10px;font-size:.8rem;
+  }
+
+  /* Diario */
+  .entrada{border-left:3px solid var(--accent);padding-left:14px;margin-bottom:16px}
+  .entrada .meta{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
+  .entrada .fecha{font-size:.78rem;font-weight:700;color:var(--accent);letter-spacing:.04em}
+  .entrada h3{font-size:1rem;margin-bottom:6px}
+  .entrada p{white-space:pre-wrap;font-size:.92rem}
+
+  /* Hábitos */
+  .habito{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:12px 0;border-bottom:1px solid var(--border);
+  }
+  .habito:last-child{border-bottom:none}
+  .habito .nombre{flex:1 1 140px;font-weight:600;font-size:.95rem}
+  .habito .racha{font-size:.78rem;color:var(--muted);white-space:nowrap}
+  .semana{display:flex;gap:5px}
+  .dia{
+    width:36px;padding:5px 0;border-radius:9px;border:1px solid var(--border);
+    background:var(--bg);color:var(--muted);cursor:pointer;text-align:center;
+    display:flex;flex-direction:column;align-items:center;line-height:1.1;
+  }
+  .dia .letra{font-size:.62rem;font-weight:700;letter-spacing:.05em}
+  .dia .num{font-size:.85rem;font-weight:600}
+  .dia:hover{border-color:var(--accent)}
+  .dia.hoy{box-shadow:0 0 0 2px var(--accent-soft)}
+  .dia.hecho{background:var(--ok);border-color:var(--ok);color:#fff}
+
+  /* Objetivos mensuales */
+  .mes-selector{
+    display:flex;align-items:center;gap:10px;margin-bottom:14px;
+    flex-wrap:wrap;justify-content:space-between;
+  }
+  .mes-selector h2{margin:0;font-size:1.05rem}
+  .mes-selector .nav{display:flex;align-items:center;gap:8px}
+  .mes-selector .nav button{
+    width:34px;height:34px;border-radius:9px;border:1px solid var(--border);
+    background:var(--card);color:var(--text);cursor:pointer;font-size:1rem;font-weight:700;
+  }
+  .mes-selector .nav button:hover{border-color:var(--accent)}
+  .mes-selector .nav .mes-actual{
+    font-weight:700;font-size:.95rem;min-width:130px;text-align:center;
+  }
+
+  .objetivo{
+    padding:14px 0;border-bottom:1px solid var(--border);
+  }
+  .objetivo:last-child{border-bottom:none}
+  .objetivo .cabecera{
+    display:flex;justify-content:space-between;align-items:center;
+    gap:10px;flex-wrap:wrap;margin-bottom:8px;
+  }
+  .objetivo h3{font-size:.98rem}
+  .objetivo .hecho-titulo{text-decoration:line-through;opacity:.55}
+  .objetivo .desc{font-size:.86rem;color:var(--muted);margin-bottom:8px;white-space:pre-wrap}
+  .barra{
+    height:9px;background:var(--border);border-radius:99px;
+    overflow:hidden;margin-bottom:8px;
+  }
+  .barra span{
+    display:block;height:100%;background:var(--accent);
+    border-radius:99px;transition:width .3s;
+  }
+  .objetivo .controles{
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.82rem;
+    color:var(--muted);
+  }
+  .objetivo .controles input[type="range"]{flex:1 1 180px;padding:0}
+  .objetivo .controles .porcentaje{min-width:90px;text-align:right;font-weight:600}
+
+  .vacio{color:var(--muted);font-size:.9rem;text-align:center;padding:18px 0}
+  footer{margin-top:28px;text-align:center;font-size:.78rem;color:var(--muted)}
+  footer button{
+    margin:0 4px;padding:8px 14px;border-radius:9px;border:1px solid var(--border);
+    background:transparent;color:var(--muted);cursor:pointer;font-size:.8rem;
+  }
+  footer button:hover{border-color:var(--accent);color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="contenedor">
+
+  <header>
+    <h1>🧭 Mi Centro de Organización</h1>
+    <p>Diario · Hábitos · Objetivos mensuales</p>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="diario" class="activo">📔 Diario</button>
+    <button data-tab="habitos">✅ Hábitos</button>
+    <button data-tab="objetivos">🎯 Objetivos</button>
+  </nav>
+
+  <!-- ================= DIARIO ================= -->
+  <section id="panel-diario" class="panel activo">
+    <div class="card">
+      <h2>Nueva entrada</h2>
+      <div class="fila">
+        <div style="flex:0 0 170px">
+          <label for="d-fecha">Fecha</label>
+          <input type="date" id="d-fecha">
+        </div>
+        <div>
+          <label for="d-titulo">Título</label>
+          <input type="text" id="d-titulo" placeholder="¿Qué ha pasado hoy?">
+        </div>
+      </div>
+      <label for="d-texto">Contenido</label>
+      <textarea id="d-texto" placeholder="Escribe libremente: ideas, reflexiones, lo que quieras recordar..."></textarea>
+      <div style="margin-top:12px">
+        <button class="btn" id="d-guardar">Guardar entrada</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Entradas guardadas</h2>
+      <div id="lista-diario"></div>
+    </div>
+  </section>
+
+  <!-- ================= HÁBITOS ================= -->
+  <section id="panel-habitos" class="panel">
+    <div class="card">
+      <h2>Añadir hábito</h2>
+      <div class="fila">
+        <div>
+          <label for="h-nombre">Nombre del hábito</label>
+          <input type="text" id="h-nombre" placeholder="Ej: Leer 20 minutos, Beber 2L de agua...">
+        </div>
+        <div style="flex:0 0 auto;display:flex;align-items:flex-end">
+          <button class="btn" id="h-agregar">Añadir</button>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:.8rem;color:var(--muted)">
+        Pulsa cada día de la semana para marcarlo como cumplido.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Mis hábitos</h2>
+      <div id="lista-habitos"></div>
+    </div>
+  </section>
+
+  <!-- ================= OBJETIVOS ================= -->
+  <section id="panel-objetivos" class="panel">
+    <div class="card">
+      <h2>Nuevo objetivo</h2>
+      <div class="fila">
+        <div>
+          <label for="o-nombre">Objetivo del mes</label>
+          <input type="text" id="o-nombre" placeholder="Ej: Terminar el curso de inglés, Ahorrar 300 €...">
+        </div>
+      </div>
+      <label for="o-desc">Descripción / primeros pasos</label>
+      <textarea id="o-desc" style="min-height:70px" placeholder="¿En qué consiste? ¿Cuál es el primer paso?"></textarea>
+      <div style="margin-top:12px">
+        <button class="btn" id="o-agregar">Añadir objetivo</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="mes-selector">
+        <h2>Objetivos del mes</h2>
+        <div class="nav">
+          <button id="mes-prev" title="Mes anterior">‹</button>
+          <span class="mes-actual" id="mes-actual"></span>
+          <button id="mes-next" title="Mes siguiente">›</button>
+        </div>
+      </div>
+      <div id="lista-objetivos"></div>
+    </div>
+  </section>
+
+  <footer>
+    <button id="exportar">⬇ Exportar copia</button>
+    <button id="importar-btn">⬆ Importar copia</button>
+    <input type="file" id="importar" accept="application/json" hidden>
+    <p style="margin-top:8px">
+      Los datos viven solo en este navegador. Exporta de vez en cuando para no perderlos.
+    </p>
+  </footer>
+
+</div>
+
+<script>
+/* ============================================================
+   ESTADO Y PERSISTENCIA
+   ============================================================ */
+const CLAVE = 'mi-organizacion-v1';
+let datos = { diario: [], habitos: [], objetivos: [] };
+
+function cargar(){
+  try{
+    const raw = localStorage.getItem(CLAVE);
+    if(raw) datos = Object.assign({diario:[],habitos:[],objetivos:[]}, JSON.parse(raw));
+  }catch(e){ console.warn('No se pudo cargar:', e); }
+}
+function guardar(){
+  try{ localStorage.setItem(CLAVE, JSON.stringify(datos)); }
+  catch(e){ alert('No se pudo guardar. Espacio de almacenamiento lleno.'); }
+}
+
+/* ============================================================
+   UTILIDADES
+   ============================================================ */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+function iso(d){
+  d = new Date(d);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+const hoy = () => iso(new Date());
+
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function fechaBonita(isoStr){
+  if(!isoStr) return '';
+  const [a,m,d] = isoStr.split('-');
+  return `${d}/${m}/${a}`;
+}
+
+function mesActualClave(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+const NOMBRES_MES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function mesBonito(clave){
+  const [a,m] = clave.split('-');
+  return `${NOMBRES_MES[Number(m)-1]} ${a}`;
+}
+
+/* ============================================================
+   NAVEGACIÓN POR PESTAÑAS
+   ============================================================ */
+document.querySelectorAll('.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('activo'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('activo'));
+    btn.classList.add('activo');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('activo');
+  });
+});
+
+/* ============================================================
+   DIARIO
+   ============================================================ */
+const $diario = document.getElementById('lista-diario');
+
+document.getElementById('d-guardar').addEventListener('click', () => {
+  const fecha  = document.getElementById('d-fecha').value || hoy();
+  const titulo = document.getElementById('d-titulo').value.trim();
+  const texto  = document.getElementById('d-texto').value.trim();
+
+  if(!titulo && !texto){ alert('Escribe al menos un título o un texto.'); return; }
+
+  datos.diario.push({ id: uid(), fecha, titulo: titulo || '(Sin título)', texto });
+  guardar();
+  document.getElementById('d-titulo').value = '';
+  document.getElementById('d-texto').value  = '';
+  renderDiario();
+});
+
+function renderDiario(){
+  const lista = [...datos.diario].sort((a,b) =>
+    b.fecha.localeCompare(a.fecha) || b.id.localeCompare(a.id));
+
+  if(!lista.length){
+    $diario.innerHTML = '<p class="vacio">Todavía no has escrito nada. Empieza por hoy ✍️</p>';
+    return;
+  }
+
+  $diario.innerHTML = lista.map(e => `
+    <div class="entrada">
+      <div class="meta">
+        <span class="fecha">${fechaBonita(e.fecha)}</span>
+        <button class="btn peligro" data-borrar="${e.id}">Eliminar</button>
+      </div>
+      <h3>${esc(e.titulo)}</h3>
+      <p>${esc(e.texto)}</p>
+    </div>
+  `).join('');
+
+  $diario.querySelectorAll('[data-borrar]').forEach(b => {
+    b.addEventListener('click', () => {
+      if(!confirm('¿Eliminar esta entrada del diario?')) return;
+      datos.diario = datos.diario.filter(x => x.id !== b.dataset.borrar);
+      guardar(); renderDiario();
+    });
+  });
+}
+
+/* ============================================================
+   HÁBITOS
+   ============================================================ */
+const $habitos = document.getElementById('lista-habitos');
+const LETRAS = ['D','L','M','X','J','V','S'];
+
+document.getElementById('h-agregar').addEventListener('click', () => {
+  const input = document.getElementById('h-nombre');
+  const nombre = input.value.trim();
+  if(!nombre){ alert('Escribe un nombre para el hábito.'); return; }
+
+  datos.habitos.push({ id: uid(), nombre, dias: {} });
+  guardar();
+  input.value = '';
+  renderHabitos();
+});
+
+function racha(h){
+  let n = 0;
+  const d = new Date();
+  if(!h.dias[iso(d)]) d.setDate(d.getDate() - 1);
+  while(h.dias[iso(d)]){
+    n++;
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+}
+
+function renderHabitos(){
+  if(!datos.habitos.length){
+    $habitos.innerHTML = '<p class="vacio">Aún no tienes hábitos. Añade el primero arriba.</p>';
+    return;
+  }
+
+  const dias = [];
+  for(let i = 6; i >= 0; i--){
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    dias.push(d);
+  }
+
+  $habitos.innerHTML = datos.habitos.map(h => {
+    const celdas = dias.map(d => {
+      const f = iso(d);
+      const hecho = !!h.dias[f];
+      const esHoy = f === hoy();
+      return `<button class="dia ${hecho?'hecho':''} ${esHoy?'hoy':''}"
+                data-habito="${h.id}" data-fecha="${f}" title="${fechaBonita(f)}">
+                <span class="letra">${LETRAS[d.getDay()]}</span>
+                <span class="num">${d.getDate()}</span>
+              </button>`;
+    }).join('');
+
+    return `
+      <div class="habito">
+        <span class="nombre">${esc(h.nombre)}</span>
+        <div class="semana">${celdas}</div>
+        <span class="racha">🔥 ${racha(h)} día(s)</span>
+        <button class="btn peligro" data-borrar-habito="${h.id}">✕</button>
+      </div>`;
+  }).join('');
+
+  $habitos.querySelectorAll('[data-habito]').forEach(b => {
+    b.addEventListener('click', () => {
+      const h = datos.habitos.find(x => x.id === b.dataset.habito);
+      if(!h) return;
+      const f = b.dataset.fecha;
+      if(h.dias[f]) delete h.dias[f];
+      else h.dias[f] = true;
+      guardar(); renderHabitos();
+    });
+  });
+
+  $habitos.querySelectorAll('[data-borrar-habito]').forEach(b => {
+    b.addEventListener('click', () => {
+      if(!confirm('¿Eliminar este hábito y todo su historial?')) return;
+      datos.habitos = datos.habitos.filter(x => x.id !== b.dataset.borrarHabito);
+      guardar(); renderHabitos();
+    });
+  });
+}
+
+/* ============================================================
+   OBJETIVOS MENSUALES
+   ============================================================ */
+const $objetivos = document.getElementById('lista-objetivos');
+let mesVista = mesActualClave();
+
+document.getElementById('o-agregar').addEventListener('click', () => {
+  const nombre = document.getElementById('o-nombre').value.trim();
+  if(!nombre){ alert('Escribe un nombre para el objetivo.'); return; }
+
+  datos.objetivos.push({
+    id: uid(),
+    mes: mesVista,
+    nombre,
+    desc: document.getElementById('o-desc').value.trim(),
+    progreso: 0,
+    hecho: false
+  });
+  guardar();
+
+  document.getElementById('o-nombre').value = '';
+  document.getElementById('o-desc').value = '';
+  renderObjetivos();
+});
+
+document.getElementById('mes-prev').addEventListener('click', () => {
+  const [a,m] = mesVista.split('-').map(Number);
+  const d = new Date(a, m-2, 1);
+  mesVista = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  renderObjetivos();
+});
+
+document.getElementById('mes-next').addEventListener('click', () => {
+  const [a,m] = mesVista.split('-').map(Number);
+  const d = new Date(a, m, 1);
+  mesVista = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  renderObjetivos();
+});
+
+function renderObjetivos(){
+  document.getElementById('mes-actual').textContent = mesBonito(mesVista);
+
+  const lista = datos.objetivos.filter(o => o.mes === mesVista);
+
+  if(!lista.length){
+    $objetivos.innerHTML = `<p class="vacio">Sin objetivos para ${mesBonito(mesVista)}. Añade uno arriba 🎯</p>`;
+    return;
+  }
+
+  $objetivos.innerHTML = lista.map(o => `
+    <div class="objetivo" data-id="${o.id}">
+      <div class="cabecera">
+        <h3 class="${o.hecho ? 'hecho-titulo' : ''}">${o.hecho ? '✔ ' : ''}${esc(o.nombre)}</h3>
+        <button class="btn peligro" data-borrar-obj="${o.id}">Eliminar</button>
+      </div>
+      ${o.desc ? `<p class="desc">${esc(o.desc)}</p>` : ''}
+      <div class="barra"><span style="width:${o.progreso}%"></span></div>
+      <div class="controles">
+        <input type="range" min="0" max="100" step="5" value="${o.progreso}"
+               data-progreso="${o.id}">
+        <span class="porcentaje">${o.progreso}%</span>
+        <button class="btn" style="padding:6px 12px;font-size:.8rem"
+                data-toggle-obj="${o.id}">
+          ${o.hecho ? 'Reabrir' : 'Marcar hecho'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  $objetivos.querySelectorAll('[data-progreso]').forEach(el => {
+    el.addEventListener('input', () => {
+      const o = datos.objetivos.find(x => x.id === el.dataset.progreso);
+      if(!o) return;
+      o.progreso = Number(el.value);
+      if(o.progreso === 100) o.hecho = true;
+      guardar();
+      const cont = el.closest('.objetivo');
+      cont.querySelector('.barra span').style.width = o.progreso + '%';
+      cont.querySelector('.porcentaje').textContent = o.progreso + '%';
+    });
+    el.addEventListener('change', renderObjetivos);
+  });
+
+  $objetivos.querySelectorAll('[data-toggle-obj]').forEach(b => {
+    b.addEventListener('click', () => {
+      const o = datos.objetivos.find(x => x.id === b.dataset.toggleObj);
+      if(!o) return;
+      o.hecho = !o.hecho;
+      o.progreso = o.hecho ? 100 : o.progreso;
+      guardar(); renderObjetivos();
+    });
+  });
+
+  $objetivos.querySelectorAll('[data-borrar-obj]').forEach(b => {
+    b.addEventListener('click', () => {
+      if(!confirm('¿Eliminar este objetivo?')) return;
+      datos.objetivos = datos.objetivos.filter(x => x.id !== b.dataset.borrarObj);
+      guardar(); renderObjetivos();
+    });
+  });
+}
+
+/* ============================================================
+   EXPORTAR / IMPORTAR
+   ============================================================ */
+document.getElementById('exportar').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(datos, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'organizacion-' + hoy() + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('importar-btn').addEventListener('click', () => {
+  document.getElementById('importar').click();
+});
+
+document.getElementById('importar').addEventListener('change', ev => {
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const nuevo = JSON.parse(reader.result);
+      if(!confirm('Esto reemplazará todos tus datos actuales. ¿Continuar?')) return;
+      datos = Object.assign({diario:[],habitos:[],objetivos:[]}, nuevo);
+      guardar(); renderTodo();
+    }catch(e){
+      alert('El archivo no es válido.');
+    }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+});
+
+/* ============================================================
+   ARRANQUE
+   ============================================================ */
+function renderTodo(){
+  renderDiario();
+  renderHabitos();
+  renderObjetivos();
+}
+
+document.getElementById('d-fecha').value = hoy();
+cargar();
+renderTodo();
+</script>
+</body>
+</html>
