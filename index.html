@@ -3,43 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Organización Vital</title>
+<title>Mi Centro de Organización</title>
+
+<!-- =====================================================================
+     ⚙️  CONFIGURACIÓN RÁPIDA
+     Cambia estos valores para personalizar tu app sin tocar el resto.
+     ===================================================================== -->
+<script>
+  const CONFIG = {
+    // Cuántos días hacia atrás se muestran en la tabla de hábitos
+    diasHabitos: 14,
+
+    // Columnas del tablero Kanban (id interno → etiqueta visible)
+    columnasKanban: [
+      { id: 'hoy',     label: '🔥 Hoy' },
+      { id: 'manana',  label: '🌅 Mañana' },
+      { id: 'semana',  label: '📅 Esta semana' },
+      { id: 'proxima', label: '➡️ Próxima semana' }
+    ],
+
+    // Nombres de los meses (puedes abreviarlos si quieres)
+    nombresMes: ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+
+    // Clave usada en el localStorage (cámbiala solo si sabes lo que haces)
+    claveStorage: 'mi-organizacion-v1'
+  };
+</script>
+
+<!-- =====================================================================
+     🎨  ESTILOS
+     ===================================================================== -->
 <style>
+  /* ---------- Variables de color ---------- */
   :root{
-    --bg:#f5f6f8; --card:#ffffff; --text:#1a1d21; --muted:#6b7280;
-    --border:#e5e7eb; --accent:#4f46e5; --accent-soft:#eef2ff;
-    --ok:#10b981; --danger:#ef4444; --radius:14px;
+    --bg:#f5f6f8;  --card:#ffffff;  --text:#1a1d21;  --muted:#6b7280;
+    --border:#e5e7eb;  --accent:#4f46e5;  --accent-soft:#eef2ff;
+    --ok:#10b981;  --danger:#ef4444;  --radius:14px;
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --bg:#0f1115; --card:#171a21; --text:#e6e8eb; --muted:#9aa3af;
-      --border:#272c36; --accent:#818cf8; --accent-soft:#1e2233;
+      --bg:#0f1115;  --card:#171a21;  --text:#e6e8eb;  --muted:#9aa3af;
+      --border:#272c36;  --accent:#818cf8;  --accent-soft:#1e2233;
     }
   }
+
+  /* ---------- Base ---------- */
   *{box-sizing:border-box;margin:0;padding:0}
   body{
     padding:24px 16px 64px; background:var(--bg); color:var(--text);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.5;
   }
-  .contenedor{max-width:960px;margin:0 auto}
+  .contenedor{max-width:1100px;margin:0 auto}
   header h1{font-size:1.6rem;margin-bottom:4px}
   header p{color:var(--muted);font-size:.9rem;margin-bottom:20px}
 
+  /* ---------- Pestañas ---------- */
   .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
   .tabs button{
-    flex:1 1 auto;min-width:110px;padding:10px 16px;border-radius:10px;
+    flex:1 1 auto;min-width:100px;padding:10px 16px;border-radius:10px;
     border:1px solid var(--border);background:var(--card);color:var(--muted);
-    font-size:.95rem;font-weight:600;cursor:pointer;transition:.15s;
+    font-size:.92rem;font-weight:600;cursor:pointer;transition:.15s;
   }
   .tabs button:hover{border-color:var(--accent)}
   .tabs button.activo{background:var(--accent);border-color:var(--accent);color:#fff}
 
+  /* ---------- Paneles ---------- */
   .panel{display:none}
   .panel.activo{display:block}
 
+  /* ---------- Tarjetas y formularios ---------- */
   .card{
-    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-    padding:18px;margin-bottom:14px;
+    background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);padding:18px;margin-bottom:14px;
   }
   .card h2{font-size:1.05rem;margin-bottom:14px}
 
@@ -66,14 +102,14 @@
     padding:6px 10px;font-size:.8rem;
   }
 
-  /* Diario */
+  /* ---------- Diario ---------- */
   .entrada{border-left:3px solid var(--accent);padding-left:14px;margin-bottom:16px}
   .entrada .meta{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
   .entrada .fecha{font-size:.78rem;font-weight:700;color:var(--accent);letter-spacing:.04em}
   .entrada h3{font-size:1rem;margin-bottom:6px}
   .entrada p{white-space:pre-wrap;font-size:.92rem}
 
-  /* Hábitos */
+  /* ---------- Hábitos ---------- */
   .habito{
     display:flex;align-items:center;gap:14px;flex-wrap:wrap;
     padding:12px 0;border-bottom:1px solid var(--border);
@@ -81,12 +117,12 @@
   .habito:last-child{border-bottom:none}
   .habito .nombre{flex:1 1 140px;font-weight:600;font-size:.95rem}
   .habito .racha{font-size:.78rem;color:var(--muted);white-space:nowrap}
-  .semana{display:flex;gap:5px}
+  .semana{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px}
   .dia{
-  width:26px;padding:4px 0;border-radius:7px;border:1px solid var(--border);
-  background:var(--bg);color:var(--muted);cursor:pointer;text-align:center;
-  display:flex;flex-direction:column;align-items:center;line-height:1.1;
-  flex-shrink:0;
+    width:36px;padding:5px 0;border-radius:9px;border:1px solid var(--border);
+    background:var(--bg);color:var(--muted);cursor:pointer;text-align:center;
+    display:flex;flex-direction:column;align-items:center;line-height:1.1;
+    flex-shrink:0;
   }
   .dia .letra{font-size:.62rem;font-weight:700;letter-spacing:.05em}
   .dia .num{font-size:.85rem;font-weight:600}
@@ -94,7 +130,7 @@
   .dia.hoy{box-shadow:0 0 0 2px var(--accent-soft)}
   .dia.hecho{background:var(--ok);border-color:var(--ok);color:#fff}
 
-  /* Objetivos mensuales */
+  /* ---------- Objetivos ---------- */
   .mes-selector{
     display:flex;align-items:center;gap:10px;margin-bottom:14px;
     flex-wrap:wrap;justify-content:space-between;
@@ -110,9 +146,7 @@
     font-weight:700;font-size:.95rem;min-width:130px;text-align:center;
   }
 
-  .objetivo{
-    padding:14px 0;border-bottom:1px solid var(--border);
-  }
+  .objetivo{padding:14px 0;border-bottom:1px solid var(--border)}
   .objetivo:last-child{border-bottom:none}
   .objetivo .cabecera{
     display:flex;justify-content:space-between;align-items:center;
@@ -121,21 +155,71 @@
   .objetivo h3{font-size:.98rem}
   .objetivo .hecho-titulo{text-decoration:line-through;opacity:.55}
   .objetivo .desc{font-size:.86rem;color:var(--muted);margin-bottom:8px;white-space:pre-wrap}
-  .barra{
-    height:9px;background:var(--border);border-radius:99px;
-    overflow:hidden;margin-bottom:8px;
-  }
-  .barra span{
-    display:block;height:100%;background:var(--accent);
-    border-radius:99px;transition:width .3s;
-  }
+  .barra{height:9px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:8px}
+  .barra span{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
   .objetivo .controles{
-    display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.82rem;
-    color:var(--muted);
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+    font-size:.82rem;color:var(--muted);
   }
   .objetivo .controles input[type="range"]{flex:1 1 180px;padding:0}
   .objetivo .controles .porcentaje{min-width:90px;text-align:right;font-weight:600}
 
+  /* ---------- Kanban ---------- */
+  .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .kanban-col{
+    background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);padding:12px;min-height:180px;
+  }
+  .kanban-header{
+    display:flex;justify-content:space-between;align-items:center;
+    font-weight:700;font-size:.88rem;margin-bottom:10px;
+    padding-bottom:8px;border-bottom:1px solid var(--border);
+  }
+  .kanban-count{
+    color:var(--muted);font-weight:500;font-size:.78rem;
+    background:var(--bg);padding:1px 8px;border-radius:99px;
+  }
+  .kanban-list{
+    min-height:80px;display:flex;flex-direction:column;gap:8px;
+    border-radius:8px;padding:4px;
+  }
+  .kanban-list.drag-over{
+    background:var(--accent-soft);
+    outline:2px dashed var(--accent);
+    outline-offset:-4px;
+  }
+  .kanban-item{
+    background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    padding:8px 10px;font-size:.86rem;display:flex;align-items:center;gap:5px;
+    cursor:grab;
+  }
+  .kanban-item:active{cursor:grabbing}
+  .kanban-item.dragging{opacity:.4}
+  .kanban-item .texto{flex:1;word-wrap:break-word;overflow-wrap:break-word;min-width:0}
+  .kanban-btn{
+    border:1px solid var(--border);background:transparent;color:var(--muted);
+    cursor:pointer;border-radius:5px;padding:1px 5px;font-size:.72rem;flex-shrink:0;
+  }
+  .kanban-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .kanban-btn.del:hover{border-color:var(--danger);color:var(--danger)}
+  .kanban-move{
+    width:auto;padding:1px 3px;font-size:.72rem;border-radius:5px;
+    background:transparent;border:1px solid var(--border);color:var(--muted);
+    cursor:pointer;flex-shrink:0;
+  }
+  .kanban-vacio{
+    color:var(--muted);font-size:.8rem;text-align:center;
+    padding:14px 0;font-style:italic;
+  }
+  @media (max-width:900px){
+    .kanban{
+      display:flex;overflow-x:auto;gap:10px;padding-bottom:10px;
+      scroll-snap-type:x mandatory;
+    }
+    .kanban-col{flex:0 0 260px;scroll-snap-align:start}
+  }
+
+  /* ---------- Utilidades ---------- */
   .vacio{color:var(--muted);font-size:.9rem;text-align:center;padding:18px 0}
   footer{margin-top:28px;text-align:center;font-size:.78rem;color:var(--muted)}
   footer button{
@@ -143,24 +227,40 @@
     background:transparent;color:var(--muted);cursor:pointer;font-size:.8rem;
   }
   footer button:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:700px){
+    .habito{flex-direction:column;align-items:flex-start;gap:8px}
+    .habito .nombre{width:100%}
+    .habito .semana{width:100%}
+    .habito .racha{align-self:flex-end}
+  }
 </style>
 </head>
 <body>
 <div class="contenedor">
 
+  <!-- =====================================================================
+       🏠  CABECERA
+       ===================================================================== -->
   <header>
-    <h1>ORGANIZACIÓN VITAL</h1>
-    <p>Diario · Hábitos · Objetivos mensuales</p>
+    <h1>🧭 Mi Centro de Organización</h1>
+    <p>Diario · Hábitos · Objetivos · Tablero</p>
   </header>
 
+  <!-- =====================================================================
+       🗂️  PESTAÑAS
+       ===================================================================== -->
   <nav class="tabs">
     <button data-tab="diario" class="activo">📔 Diario</button>
     <button data-tab="habitos">✅ Hábitos</button>
     <button data-tab="objetivos">🎯 Objetivos</button>
-    <button data-tab="hacer">Cosas que hacer</button>
+    <button data-tab="kanban">📋 Tablero</button>
   </nav>
 
-  <!-- ================= DIARIO ================= -->
+  <!-- =====================================================================
+       📔  PANEL: DIARIO
+       ===================================================================== -->
   <section id="panel-diario" class="panel activo">
     <div class="card">
       <h2>Nueva entrada</h2>
@@ -175,7 +275,7 @@
         </div>
       </div>
       <label for="d-texto">Contenido</label>
-      <textarea id="d-texto" placeholder="Escribe libremente: ideas, reflexiones, lo que quieras recordar..."></textarea>
+      <textarea id="d-texto" placeholder="Escribe libremente..."></textarea>
       <div style="margin-top:12px">
         <button class="btn" id="d-guardar">Guardar entrada</button>
       </div>
@@ -187,7 +287,9 @@
     </div>
   </section>
 
-  <!-- ================= HÁBITOS ================= -->
+  <!-- =====================================================================
+       ✅  PANEL: HÁBITOS
+       ===================================================================== -->
   <section id="panel-habitos" class="panel">
     <div class="card">
       <h2>Añadir hábito</h2>
@@ -201,7 +303,7 @@
         </div>
       </div>
       <p style="margin-top:8px;font-size:.8rem;color:var(--muted)">
-        Pulsa cada día de la semana para marcarlo como cumplido.
+        Pulsa cada día para marcarlo como cumplido. Puedes deslizar la fila horizontalmente.
       </p>
     </div>
 
@@ -211,7 +313,9 @@
     </div>
   </section>
 
-  <!-- ================= OBJETIVOS ================= -->
+  <!-- =====================================================================
+       🎯  PANEL: OBJETIVOS
+       ===================================================================== -->
   <section id="panel-objetivos" class="panel">
     <div class="card">
       <h2>Nuevo objetivo</h2>
@@ -241,6 +345,42 @@
     </div>
   </section>
 
+  <!-- =====================================================================
+       📋  PANEL: KANBAN
+       ===================================================================== -->
+  <section id="panel-kanban" class="panel">
+    <div class="card">
+      <h2>Nueva tarea</h2>
+      <div class="fila">
+        <div>
+          <label for="k-texto">Tarea</label>
+          <input type="text" id="k-texto" placeholder="¿Qué hay que hacer?">
+        </div>
+        <div style="flex:0 0 170px">
+          <label for="k-columna">Columna</label>
+          <select id="k-columna">
+            <option value="hoy">🔥 Hoy</option>
+            <option value="manana">🌅 Mañana</option>
+            <option value="semana">📅 Esta semana</option>
+            <option value="proxima">➡️ Próxima semana</option>
+          </select>
+        </div>
+        <div style="flex:0 0 auto;display:flex;align-items:flex-end">
+          <button class="btn" id="k-agregar">Añadir</button>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:.8rem;color:var(--muted)">
+        💡 Arrastra las tarjetas entre columnas. En móvil, usa el desplegable de cada tarjeta.
+      </p>
+    </div>
+
+    <!-- Las columnas se generan dinámicamente desde CONFIG.columnasKanban -->
+    <div class="kanban" id="kanban-board"></div>
+  </section>
+
+  <!-- =====================================================================
+       💾  PIE: EXPORTAR / IMPORTAR
+       ===================================================================== -->
   <footer>
     <button id="exportar">⬇ Exportar copia</button>
     <button id="importar-btn">⬆ Importar copia</button>
@@ -252,32 +392,49 @@
 
 </div>
 
+<!-- =====================================================================
+     🧠  LÓGICA
+     ===================================================================== -->
 <script>
 /* ============================================================
-   ESTADO Y PERSISTENCIA
+   1. ESTADO Y PERSISTENCIA
    ============================================================ */
-const CLAVE = 'mi-organizacion-v1';
-let datos = { diario: [], habitos: [], objetivos: [] };
+let datos = {
+  diario: [],     // { id, fecha, titulo, texto }
+  habitos: [],    // { id, nombre, dias: { 'YYYY-MM-DD': true } }
+  objetivos: [],  // { id, mes, nombre, desc, progreso, hecho }
+  tablero: []     // { id, texto, columna }
+};
 
 function cargar(){
   try{
-    const raw = localStorage.getItem(CLAVE);
-    if(raw) datos = Object.assign({diario:[],habitos:[],objetivos:[]}, JSON.parse(raw));
+    const raw = localStorage.getItem(CONFIG.claveStorage);
+    if(!raw) return;
+    const p = JSON.parse(raw);
+    datos = {
+      diario:    p.diario    || [],
+      habitos:   p.habitos   || [],
+      objetivos: p.objetivos || [],
+      tablero:   p.tablero   || []
+    };
   }catch(e){ console.warn('No se pudo cargar:', e); }
 }
+
 function guardar(){
-  try{ localStorage.setItem(CLAVE, JSON.stringify(datos)); }
-  catch(e){ alert('No se pudo guardar. Espacio de almacenamiento lleno.'); }
+  try{ localStorage.setItem(CONFIG.claveStorage, JSON.stringify(datos)); }
+  catch(e){ alert('No se pudo guardar. Espacio lleno.'); }
 }
 
 /* ============================================================
-   UTILIDADES
+   2. UTILIDADES
    ============================================================ */
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
 function iso(d){
   d = new Date(d);
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  return d.getFullYear() + '-' +
+         String(d.getMonth()+1).padStart(2,'0') + '-' +
+         String(d.getDate()).padStart(2,'0');
 }
 const hoy = () => iso(new Date());
 
@@ -297,55 +454,55 @@ function mesActualClave(){
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
 }
 
-const NOMBRES_MES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
 function mesBonito(clave){
   const [a,m] = clave.split('-');
-  return `${NOMBRES_MES[Number(m)-1]} ${a}`;
+  return `${CONFIG.nombresMes[Number(m)-1]} ${a}`;
 }
 
 /* ============================================================
-   NAVEGACIÓN POR PESTAÑAS
+   3. NAVEGACIÓN ENTRE PESTAÑAS
    ============================================================ */
-document.querySelectorAll('.tabs button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('activo'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('activo'));
-    btn.classList.add('activo');
-    document.getElementById('panel-' + btn.dataset.tab).classList.add('activo');
+function setupTabs(){
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('activo'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('activo'));
+      btn.classList.add('activo');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('activo');
+    });
   });
-});
+}
 
 /* ============================================================
-   DIARIO
+   4. DIARIO
    ============================================================ */
-const $diario = document.getElementById('lista-diario');
+function setupDiario(){
+  document.getElementById('d-guardar').addEventListener('click', () => {
+    const fecha  = document.getElementById('d-fecha').value || hoy();
+    const titulo = document.getElementById('d-titulo').value.trim();
+    const texto  = document.getElementById('d-texto').value.trim();
 
-document.getElementById('d-guardar').addEventListener('click', () => {
-  const fecha  = document.getElementById('d-fecha').value || hoy();
-  const titulo = document.getElementById('d-titulo').value.trim();
-  const texto  = document.getElementById('d-texto').value.trim();
+    if(!titulo && !texto){ alert('Escribe al menos un título o un texto.'); return; }
 
-  if(!titulo && !texto){ alert('Escribe al menos un título o un texto.'); return; }
-
-  datos.diario.push({ id: uid(), fecha, titulo: titulo || '(Sin título)', texto });
-  guardar();
-  document.getElementById('d-titulo').value = '';
-  document.getElementById('d-texto').value  = '';
-  renderDiario();
-});
+    datos.diario.push({ id: uid(), fecha, titulo: titulo || '(Sin título)', texto });
+    guardar();
+    document.getElementById('d-titulo').value = '';
+    document.getElementById('d-texto').value  = '';
+    renderDiario();
+  });
+}
 
 function renderDiario(){
+  const $l = document.getElementById('lista-diario');
   const lista = [...datos.diario].sort((a,b) =>
     b.fecha.localeCompare(a.fecha) || b.id.localeCompare(a.id));
 
   if(!lista.length){
-    $diario.innerHTML = '<p class="vacio">Todavía no has escrito nada. Empieza por hoy ✍️</p>';
+    $l.innerHTML = '<p class="vacio">Todavía no has escrito nada. Empieza por hoy ✍️</p>';
     return;
   }
 
-  $diario.innerHTML = lista.map(e => `
+  $l.innerHTML = lista.map(e => `
     <div class="entrada">
       <div class="meta">
         <span class="fecha">${fechaBonita(e.fecha)}</span>
@@ -356,7 +513,7 @@ function renderDiario(){
     </div>
   `).join('');
 
-  $diario.querySelectorAll('[data-borrar]').forEach(b => {
+  $l.querySelectorAll('[data-borrar]').forEach(b => {
     b.addEventListener('click', () => {
       if(!confirm('¿Eliminar esta entrada del diario?')) return;
       datos.diario = datos.diario.filter(x => x.id !== b.dataset.borrar);
@@ -366,21 +523,22 @@ function renderDiario(){
 }
 
 /* ============================================================
-   HÁBITOS
+   5. HÁBITOS
    ============================================================ */
-const $habitos = document.getElementById('lista-habitos');
-const LETRAS = ['D','L','M','X','J','V','S'];
+const LETRAS_DIA = ['D','L','M','X','J','V','S'];
 
-document.getElementById('h-agregar').addEventListener('click', () => {
-  const input = document.getElementById('h-nombre');
-  const nombre = input.value.trim();
-  if(!nombre){ alert('Escribe un nombre para el hábito.'); return; }
+function setupHabitos(){
+  document.getElementById('h-agregar').addEventListener('click', () => {
+    const input = document.getElementById('h-nombre');
+    const nombre = input.value.trim();
+    if(!nombre){ alert('Escribe un nombre para el hábito.'); return; }
 
-  datos.habitos.push({ id: uid(), nombre, dias: {} });
-  guardar();
-  input.value = '';
-  renderHabitos();
-});
+    datos.habitos.push({ id: uid(), nombre, dias: {} });
+    guardar();
+    input.value = '';
+    renderHabitos();
+  });
+}
 
 function racha(h){
   let n = 0;
@@ -394,26 +552,29 @@ function racha(h){
 }
 
 function renderHabitos(){
+  const $l = document.getElementById('lista-habitos');
+
   if(!datos.habitos.length){
-    $habitos.innerHTML = '<p class="vacio">Aún no tienes hábitos. Añade el primero arriba.</p>';
+    $l.innerHTML = '<p class="vacio">Aún no tienes hábitos. Añade el primero arriba.</p>';
     return;
   }
 
+  // Días a mostrar (CONFIG.diasHabitos, terminando en hoy)
   const dias = [];
-  for(let i = 13; i >= 0; i--){
+  for(let i = CONFIG.diasHabitos - 1; i >= 0; i--){
     const d = new Date();
     d.setDate(d.getDate() - i);
     dias.push(d);
   }
 
-  $habitos.innerHTML = datos.habitos.map(h => {
+  $l.innerHTML = datos.habitos.map(h => {
     const celdas = dias.map(d => {
       const f = iso(d);
       const hecho = !!h.dias[f];
       const esHoy = f === hoy();
       return `<button class="dia ${hecho?'hecho':''} ${esHoy?'hoy':''}"
                 data-habito="${h.id}" data-fecha="${f}" title="${fechaBonita(f)}">
-                <span class="letra">${LETRAS[d.getDay()]}</span>
+                <span class="letra">${LETRAS_DIA[d.getDay()]}</span>
                 <span class="num">${d.getDate()}</span>
               </button>`;
     }).join('');
@@ -427,7 +588,7 @@ function renderHabitos(){
       </div>`;
   }).join('');
 
-  $habitos.querySelectorAll('[data-habito]').forEach(b => {
+  $l.querySelectorAll('[data-habito]').forEach(b => {
     b.addEventListener('click', () => {
       const h = datos.habitos.find(x => x.id === b.dataset.habito);
       if(!h) return;
@@ -438,7 +599,7 @@ function renderHabitos(){
     });
   });
 
-  $habitos.querySelectorAll('[data-borrar-habito]').forEach(b => {
+  $l.querySelectorAll('[data-borrar-habito]').forEach(b => {
     b.addEventListener('click', () => {
       if(!confirm('¿Eliminar este hábito y todo su historial?')) return;
       datos.habitos = datos.habitos.filter(x => x.id !== b.dataset.borrarHabito);
@@ -448,56 +609,58 @@ function renderHabitos(){
 }
 
 /* ============================================================
-   OBJETIVOS MENSUALES
+   6. OBJETIVOS
    ============================================================ */
-const $objetivos = document.getElementById('lista-objetivos');
 let mesVista = mesActualClave();
 
-document.getElementById('o-agregar').addEventListener('click', () => {
-  const nombre = document.getElementById('o-nombre').value.trim();
-  if(!nombre){ alert('Escribe un nombre para el objetivo.'); return; }
+function setupObjetivos(){
+  document.getElementById('o-agregar').addEventListener('click', () => {
+    const nombre = document.getElementById('o-nombre').value.trim();
+    if(!nombre){ alert('Escribe un nombre para el objetivo.'); return; }
 
-  datos.objetivos.push({
-    id: uid(),
-    mes: mesVista,
-    nombre,
-    desc: document.getElementById('o-desc').value.trim(),
-    progreso: 0,
-    hecho: false
+    datos.objetivos.push({
+      id: uid(),
+      mes: mesVista,
+      nombre,
+      desc: document.getElementById('o-desc').value.trim(),
+      progreso: 0,
+      hecho: false
+    });
+    guardar();
+
+    document.getElementById('o-nombre').value = '';
+    document.getElementById('o-desc').value = '';
+    renderObjetivos();
   });
-  guardar();
 
-  document.getElementById('o-nombre').value = '';
-  document.getElementById('o-desc').value = '';
-  renderObjetivos();
-});
+  document.getElementById('mes-prev').addEventListener('click', () => {
+    const [a,m] = mesVista.split('-').map(Number);
+    const d = new Date(a, m-2, 1);
+    mesVista = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    renderObjetivos();
+  });
 
-document.getElementById('mes-prev').addEventListener('click', () => {
-  const [a,m] = mesVista.split('-').map(Number);
-  const d = new Date(a, m-2, 1);
-  mesVista = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-  renderObjetivos();
-});
-
-document.getElementById('mes-next').addEventListener('click', () => {
-  const [a,m] = mesVista.split('-').map(Number);
-  const d = new Date(a, m, 1);
-  mesVista = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-  renderObjetivos();
-});
+  document.getElementById('mes-next').addEventListener('click', () => {
+    const [a,m] = mesVista.split('-').map(Number);
+    const d = new Date(a, m, 1);
+    mesVista = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    renderObjetivos();
+  });
+}
 
 function renderObjetivos(){
+  const $l = document.getElementById('lista-objetivos');
   document.getElementById('mes-actual').textContent = mesBonito(mesVista);
 
   const lista = datos.objetivos.filter(o => o.mes === mesVista);
 
   if(!lista.length){
-    $objetivos.innerHTML = `<p class="vacio">Sin objetivos para ${mesBonito(mesVista)}. Añade uno arriba 🎯</p>`;
+    $l.innerHTML = `<p class="vacio">Sin objetivos para ${mesBonito(mesVista)}. Añade uno arriba 🎯</p>`;
     return;
   }
 
-  $objetivos.innerHTML = lista.map(o => `
-    <div class="objetivo" data-id="${o.id}">
+  $l.innerHTML = lista.map(o => `
+    <div class="objetivo">
       <div class="cabecera">
         <h3 class="${o.hecho ? 'hecho-titulo' : ''}">${o.hecho ? '✔ ' : ''}${esc(o.nombre)}</h3>
         <button class="btn peligro" data-borrar-obj="${o.id}">Eliminar</button>
@@ -505,18 +668,16 @@ function renderObjetivos(){
       ${o.desc ? `<p class="desc">${esc(o.desc)}</p>` : ''}
       <div class="barra"><span style="width:${o.progreso}%"></span></div>
       <div class="controles">
-        <input type="range" min="0" max="100" step="5" value="${o.progreso}"
-               data-progreso="${o.id}">
+        <input type="range" min="0" max="100" step="5" value="${o.progreso}" data-progreso="${o.id}">
         <span class="porcentaje">${o.progreso}%</span>
-        <button class="btn" style="padding:6px 12px;font-size:.8rem"
-                data-toggle-obj="${o.id}">
+        <button class="btn" style="padding:6px 12px;font-size:.8rem" data-toggle-obj="${o.id}">
           ${o.hecho ? 'Reabrir' : 'Marcar hecho'}
         </button>
       </div>
     </div>
   `).join('');
 
-  $objetivos.querySelectorAll('[data-progreso]').forEach(el => {
+  $l.querySelectorAll('[data-progreso]').forEach(el => {
     el.addEventListener('input', () => {
       const o = datos.objetivos.find(x => x.id === el.dataset.progreso);
       if(!o) return;
@@ -530,7 +691,7 @@ function renderObjetivos(){
     el.addEventListener('change', renderObjetivos);
   });
 
-  $objetivos.querySelectorAll('[data-toggle-obj]').forEach(b => {
+  $l.querySelectorAll('[data-toggle-obj]').forEach(b => {
     b.addEventListener('click', () => {
       const o = datos.objetivos.find(x => x.id === b.dataset.toggleObj);
       if(!o) return;
@@ -540,7 +701,7 @@ function renderObjetivos(){
     });
   });
 
-  $objetivos.querySelectorAll('[data-borrar-obj]').forEach(b => {
+  $l.querySelectorAll('[data-borrar-obj]').forEach(b => {
     b.addEventListener('click', () => {
       if(!confirm('¿Eliminar este objetivo?')) return;
       datos.objetivos = datos.objetivos.filter(x => x.id !== b.dataset.borrarObj);
@@ -550,51 +711,254 @@ function renderObjetivos(){
 }
 
 /* ============================================================
-   EXPORTAR / IMPORTAR
+   7. KANBAN
    ============================================================ */
-document.getElementById('exportar').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(datos, null, 2)], { type:'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'organizacion-' + hoy() + '.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
+const COLUMNAS = CONFIG.columnasKanban.map(c => c.id);
 
-document.getElementById('importar-btn').addEventListener('click', () => {
-  document.getElementById('importar').click();
-});
+/* --- 7.1 Generar las columnas del tablero desde CONFIG --- */
+function pintarColumnasKanban(){
+  const board = document.getElementById('kanban-board');
+  const colores = { hoy: '🔥', manana: '🌅', semana: '📅', proxima: '➡️' };
 
-document.getElementById('importar').addEventListener('change', ev => {
-  const file = ev.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try{
-      const nuevo = JSON.parse(reader.result);
-      if(!confirm('Esto reemplazará todos tus datos actuales. ¿Continuar?')) return;
-      datos = Object.assign({diario:[],habitos:[],objetivos:[]}, nuevo);
-      guardar(); renderTodo();
-    }catch(e){
-      alert('El archivo no es válido.');
+  board.innerHTML = CONFIG.columnasKanban.map(c => `
+    <div class="kanban-col" data-col="${c.id}">
+      <div class="kanban-header">
+        <span>${c.label}</span>
+        <span class="kanban-count" data-count="${c.id}">0</span>
+      </div>
+      <div class="kanban-list" data-drop="${c.id}"></div>
+    </div>
+  `).join('');
+}
+
+/* --- 7.2 Formulario para crear tareas --- */
+function setupKanbanForm(){
+  const input = document.getElementById('k-texto');
+  const select = document.getElementById('k-columna');
+
+  // Rellenar el <select> del formulario con las columnas configuradas
+  select.innerHTML = CONFIG.columnasKanban
+    .map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+
+  document.getElementById('k-agregar').addEventListener('click', () => {
+    const texto = input.value.trim();
+    if(!texto){ alert('Escribe una tarea.'); return; }
+    datos.tablero.push({ id: uid(), texto, columna: select.value });
+    guardar();
+    input.value = '';
+    input.focus();
+    renderKanban();
+  });
+
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Enter') document.getElementById('k-agregar').click();
+  });
+}
+
+/* --- 7.3 Pintar las tarjetas de cada columna --- */
+function renderKanban(){
+  COLUMNAS.forEach(col => {
+    const list  = document.querySelector(`[data-drop="${col}"]`);
+    const count = document.querySelector(`[data-count="${col}"]`);
+    if(!list) return;
+
+    const items = datos.tablero.filter(t => t.columna === col);
+    if(count) count.textContent = items.length;
+
+    if(!items.length){
+      list.innerHTML = '<p class="kanban-vacio">Sin tareas</p>';
+      return;
     }
-  };
-  reader.readAsText(file);
-  ev.target.value = '';
-});
+
+    list.innerHTML = items.map(t => `
+      <div class="kanban-item" draggable="true" data-id="${t.id}">
+        <span class="texto">${esc(t.texto)}</span>
+        <select class="kanban-move" data-move="${t.id}" title="Mover">
+          ${CONFIG.columnasKanban.map(c =>
+            `<option value="${c.id}" ${t.columna===c.id?'selected':''}>${c.label.split(' ')[0]}</option>`
+          ).join('')}
+        </select>
+        <button class="kanban-btn" data-edit="${t.id}" title="Editar">✎</button>
+        <button class="kanban-btn del" data-borrar="${t.id}" title="Eliminar">✕</button>
+      </div>
+    `).join('');
+
+    // Arrastrar
+    list.querySelectorAll('.kanban-item').forEach(item => {
+      item.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', item.dataset.id);
+        e.dataTransfer.effectAllowed = 'move';
+        item.classList.add('dragging');
+      });
+      item.addEventListener('dragend', () => item.classList.remove('dragging'));
+    });
+
+    // Mover (desplegable)
+    list.querySelectorAll('[data-move]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const t = datos.tablero.find(x => x.id === sel.dataset.move);
+        if(!t) return;
+        t.columna = sel.value;
+        guardar(); renderKanban();
+      });
+    });
+
+    // Editar
+    list.querySelectorAll('[data-edit]').forEach(b => {
+      b.addEventListener('click', e => {
+        e.stopPropagation();
+        const t = datos.tablero.find(x => x.id === b.dataset.edit);
+        if(!t) return;
+        const nuevo = prompt('Editar tarea:', t.texto);
+        if(nuevo === null) return;
+        const limpio = nuevo.trim();
+        if(!limpio) return;
+        t.texto = limpio;
+        guardar(); renderKanban();
+      });
+    });
+
+    // Eliminar
+    list.querySelectorAll('[data-borrar]').forEach(b => {
+      b.addEventListener('click', e => {
+        e.stopPropagation();
+        if(!confirm('¿Eliminar esta tarea?')) return;
+        datos.tablero = datos.tablero.filter(x => x.id !== b.dataset.borrar);
+        guardar(); renderKanban();
+      });
+    });
+  });
+}
+
+/* --- 7.4 Drag & drop entre columnas --- */
+function setupDropZones(){
+  COLUMNAS.forEach(col => {
+    const list = document.querySelector(`[data-drop="${col}"]`);
+    if(!list) return;
+
+    list.addEventListener('dragenter', e => {
+      e.preventDefault();
+      list._counter = (list._counter || 0) + 1;
+      list.classList.add('drag-over');
+    });
+
+    list.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+
+    list.addEventListener('dragleave', () => {
+      list._counter = Math.max(0, (list._counter || 0) - 1);
+      if(list._counter === 0) list.classList.remove('drag-over');
+    });
+
+    list.addEventListener('drop', e => {
+      e.preventDefault();
+      list._counter = 0;
+      list.classList.remove('drag-over');
+
+      const id = e.dataTransfer.getData('text/plain');
+      const tarea = datos.tablero.find(x => x.id === id);
+      if(!tarea) return;
+
+      const targetItem = e.target.closest ? e.target.closest('.kanban-item') : null;
+      if(targetItem && targetItem.dataset.id === id) return;
+
+      const oldIndex = datos.tablero.findIndex(x => x.id === id);
+      if(oldIndex === -1) return;
+      datos.tablero.splice(oldIndex, 1);
+      tarea.columna = col;
+
+      if(targetItem){
+        const targetIdx = datos.tablero.findIndex(x => x.id === targetItem.dataset.id);
+        if(targetIdx >= 0) datos.tablero.splice(targetIdx, 0, tarea);
+        else datos.tablero.push(tarea);
+      } else {
+        let lastIdx = -1;
+        for(let i = datos.tablero.length - 1; i >= 0; i--){
+          if(datos.tablero[i].columna === col){ lastIdx = i; break; }
+        }
+        datos.tablero.splice(lastIdx >= 0 ? lastIdx + 1 : datos.tablero.length, 0, tarea);
+      }
+
+      guardar(); renderKanban();
+    });
+  });
+}
 
 /* ============================================================
-   ARRANQUE
+   8. EXPORTAR / IMPORTAR
+   ============================================================ */
+function setupBackup(){
+  document.getElementById('exportar').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(datos, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'organizacion-' + hoy() + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById('importar-btn').addEventListener('click', () => {
+    document.getElementById('importar').click();
+  });
+
+  document.getElementById('importar').addEventListener('change', ev => {
+    const file = ev.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const nuevo = JSON.parse(reader.result);
+        if(!confirm('Esto reemplazará todos tus datos actuales. ¿Continuar?')) return;
+        datos = {
+          diario:    nuevo.diario    || [],
+          habitos:   nuevo.habitos   || [],
+          objetivos: nuevo.objetivos || [],
+          tablero:   nuevo.tablero   || []
+        };
+        guardar(); renderTodo();
+      }catch(e){
+        alert('El archivo no es válido.');
+      }
+    };
+    reader.readAsText(file);
+    ev.target.value = '';
+  });
+}
+
+/* ============================================================
+   9. ARRANQUE
    ============================================================ */
 function renderTodo(){
   renderDiario();
   renderHabitos();
   renderObjetivos();
+  renderKanban();
 }
 
-document.getElementById('d-fecha').value = hoy();
-cargar();
-renderTodo();
+function init(){
+  // 1. Rellenar la fecha de hoy en el diario
+  document.getElementById('d-fecha').value = hoy();
+
+  // 2. Crear las columnas del Kanban desde CONFIG
+  pintarColumnasKanban();
+
+  // 3. Enganchar todos los listeners
+  setupTabs();
+  setupDiario();
+  setupHabitos();
+  setupObjetivos();
+  setupKanbanForm();
+  setupDropZones();
+  setupBackup();
+
+  // 4. Cargar datos guardados y pintar
+  cargar();
+  renderTodo();
+}
+
+init();
 </script>
 </body>
 </html>
