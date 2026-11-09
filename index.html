@@ -3,269 +3,695 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mi Centro de Organización</title>
+<title>Plan Quinquenal</title>
 
 <!-- =====================================================================
-     ⚙️  CONFIGURACIÓN RÁPIDA
-     Cambia estos valores para personalizar tu app sin tocar el resto.
+     ⚙️ CONFIGURACIÓN
      ===================================================================== -->
 <script>
   const CONFIG = {
-    // Cuántos días hacia atrás se muestran en la tabla de hábitos
-    diasHabitos: 14,
-
-    // Columnas del tablero Kanban (id interno → etiqueta visible)
+    diasHabitos: 7,
     columnasKanban: [
-      { id: 'hoy',     label: '🔥 Hoy' },
-      { id: 'manana',  label: '🌅 Mañana' },
-      { id: 'semana',  label: '📅 Esta semana' },
+      { id: 'hoy', label: '🔥 Hoy' },
+      { id: 'manana', label: '🌅 Mañana' },
+      { id: 'semana', label: '📅 Esta semana' },
       { id: 'proxima', label: '➡️ Próxima semana' }
     ],
-
-    // Nombres de los meses (puedes abreviarlos si quieres)
-    nombresMes: ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                 'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
-
-    // Clave usada en el localStorage (cámbiala solo si sabes lo que haces)
     claveStorage: 'mi-organizacion-v1'
   };
 </script>
 
 <!-- =====================================================================
-     🎨  ESTILOS
+     🎨 ESTILOS — BRUTALISMO + NATURALEZA
      ===================================================================== -->
 <style>
-  /* ---------- Variables de color ---------- */
-  :root{
-    --bg:#f5f6f8;  --card:#ffffff;  --text:#1a1d21;  --muted:#6b7280;
-    --border:#e5e7eb;  --accent:#4f46e5;  --accent-soft:#eef2ff;
-    --ok:#10b981;  --danger:#ef4444;  --radius:14px;
+  /* ---------- VARIABLES ---------- */
+  :root {
+    --bg: #e8e3d5;          /* hueso */
+    --bg-2: #d4cbb8;        /* arena */
+    --bg-3: #c4ba9f;        /* arena oscura */
+    --ink: #2a2825;         /* carbón */
+    --ink-soft: #4a4640;    /* hormigón */
+    --muted: #6b665c;       /* piedra */
+    --line: #2a2825;
+    --moss: #4a5a3a;        /* musgo */
+    --moss-soft: #dde3d4;
+    --terra: #a8563c;       /* terracota */
+    --terra-soft: #f0d9d0;
+    --grid: rgba(42, 40, 37, 0.05);
+    --shadow: #2a2825;
   }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --bg:#0f1115;  --card:#171a21;  --text:#e6e8eb;  --muted:#9aa3af;
-      --border:#272c36;  --accent:#818cf8;  --accent-soft:#1e2233;
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1916; --bg-2: #252320; --bg-3: #2e2b26;
+      --ink: #e8e3d5; --ink-soft: #b8b0a0; --muted: #8a8478;
+      --line: #e8e3d5;
+      --moss: #8fa67a; --moss-soft: #2a3320;
+      --terra: #c8765c; --terra-soft: #3a2018;
+      --grid: rgba(232, 227, 213, 0.04);
+      --shadow: #e8e3d5;
     }
   }
 
-  /* ---------- Base ---------- */
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    padding:24px 16px 64px; background:var(--bg); color:var(--text);
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.5;
-  }
-  .contenedor{max-width:1100px;margin:0 auto}
-  header h1{font-size:1.6rem;margin-bottom:4px}
-  header p{color:var(--muted);font-size:.9rem;margin-bottom:20px}
+  /* ---------- BASE ---------- */
+  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
 
-  /* ---------- Pestañas ---------- */
-  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
-  .tabs button{
-    flex:1 1 auto;min-width:100px;padding:10px 16px;border-radius:10px;
-    border:1px solid var(--border);background:var(--card);color:var(--muted);
-    font-size:.92rem;font-weight:600;cursor:pointer;transition:.15s;
+  body {
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: ui-monospace, 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.55;
+    padding: 24px 20px 120px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
   }
-  .tabs button:hover{border-color:var(--accent)}
-  .tabs button.activo{background:var(--accent);border-color:var(--accent);color:#fff}
+  .contenedor { max-width: 960px; margin: 0 auto; }
 
-  /* ---------- Paneles ---------- */
-  .panel{display:none}
-  .panel.activo{display:block}
-
-  /* ---------- Tarjetas y formularios ---------- */
-  .card{
-    background:var(--card);border:1px solid var(--border);
-    border-radius:var(--radius);padding:18px;margin-bottom:14px;
-  }
-  .card h2{font-size:1.05rem;margin-bottom:14px}
-
-  label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:4px}
-  input,textarea,select{
-    width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--border);
-    background:var(--bg);color:var(--text);font-family:inherit;font-size:.92rem;
-  }
-  input:focus,textarea:focus,select:focus{
-    outline:2px solid var(--accent-soft);border-color:var(--accent);
-  }
-  textarea{resize:vertical;min-height:90px}
-
-  .fila{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-  .fila > div{flex:1 1 180px}
-
-  button.btn{
-    padding:10px 18px;border-radius:9px;border:none;cursor:pointer;
-    background:var(--accent);color:#fff;font-weight:600;font-size:.9rem;
-  }
-  button.btn:hover{filter:brightness(1.1)}
-  button.btn.peligro{
-    background:transparent;border:1px solid var(--danger);color:var(--danger);
-    padding:6px 10px;font-size:.8rem;
+  h1, h2, h3 {
+    font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
   }
 
-  /* ---------- Diario ---------- */
-  .entrada{border-left:3px solid var(--accent);padding-left:14px;margin-bottom:16px}
-  .entrada .meta{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
-  .entrada .fecha{font-size:.78rem;font-weight:700;color:var(--accent);letter-spacing:.04em}
-  .entrada h3{font-size:1rem;margin-bottom:6px}
-  .entrada p{white-space:pre-wrap;font-size:.92rem}
-
-  /* ---------- Hábitos ---------- */
-  .habito{
-    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-    padding:12px 0;border-bottom:1px solid var(--border);
+  /* ---------- CABECERA DE CADA PANEL ---------- */
+  .panel-head {
+    border-bottom: 3px solid var(--line);
+    padding-bottom: 18px;
+    margin-bottom: 24px;
+    position: relative;
   }
-  .habito:last-child{border-bottom:none}
-  .habito .nombre{flex:1 1 140px;font-weight:600;font-size:.95rem}
-  .habito .racha{font-size:.78rem;color:var(--muted);white-space:nowrap}
-  .semana{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px}
-  .dia{
-    width:36px;padding:5px 0;border-radius:9px;border:1px solid var(--border);
-    background:var(--bg);color:var(--muted);cursor:pointer;text-align:center;
-    display:flex;flex-direction:column;align-items:center;line-height:1.1;
-    flex-shrink:0;
+  .panel-head h1 {
+    font-size: 40px;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 6px;
   }
-  .dia .letra{font-size:.62rem;font-weight:700;letter-spacing:.05em}
-  .dia .num{font-size:.85rem;font-weight:600}
-  .dia:hover{border-color:var(--accent)}
-  .dia.hoy{box-shadow:0 0 0 2px var(--accent-soft)}
-  .dia.hecho{background:var(--ok);border-color:var(--ok);color:#fff}
-
-  /* ---------- Objetivos ---------- */
-  .mes-selector{
-    display:flex;align-items:center;gap:10px;margin-bottom:14px;
-    flex-wrap:wrap;justify-content:space-between;
+  .panel-head .tag {
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
   }
-  .mes-selector h2{margin:0;font-size:1.05rem}
-  .mes-selector .nav{display:flex;align-items:center;gap:8px}
-  .mes-selector .nav button{
-    width:34px;height:34px;border-radius:9px;border:1px solid var(--border);
-    background:var(--card);color:var(--text);cursor:pointer;font-size:1rem;font-weight:700;
+  .panel-head .year-tag {
+    position: absolute; top: 0; right: 0;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--terra);
+    border: 2px solid var(--terra);
+    padding: 5px 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
-  .mes-selector .nav button:hover{border-color:var(--accent)}
-  .mes-selector .nav .mes-actual{
-    font-weight:700;font-size:.95rem;min-width:130px;text-align:center;
+  @media (max-width: 640px) {
+    .panel-head h1 { font-size: 30px; }
+    .panel-head .year-tag { position: static; display: inline-block; margin-top: 10px; }
   }
 
-  .objetivo{padding:14px 0;border-bottom:1px solid var(--border)}
-  .objetivo:last-child{border-bottom:none}
-  .objetivo .cabecera{
-    display:flex;justify-content:space-between;align-items:center;
-    gap:10px;flex-wrap:wrap;margin-bottom:8px;
+  /* ---------- SECCIONES NUMERADAS ---------- */
+  .block {
+    background: var(--bg-2);
+    border: 2px solid var(--line);
+    box-shadow: 6px 6px 0 var(--shadow);
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
   }
-  .objetivo h3{font-size:.98rem}
-  .objetivo .hecho-titulo{text-decoration:line-through;opacity:.55}
-  .objetivo .desc{font-size:.86rem;color:var(--muted);margin-bottom:8px;white-space:pre-wrap}
-  .barra{height:9px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:8px}
-  .barra span{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
-  .objetivo .controles{
-    display:flex;gap:10px;align-items:center;flex-wrap:wrap;
-    font-size:.82rem;color:var(--muted);
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--line);
+    flex-wrap: wrap;
   }
-  .objetivo .controles input[type="range"]{flex:1 1 180px;padding:0}
-  .objetivo .controles .porcentaje{min-width:90px;text-align:right;font-weight:600}
+  .section-num {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--terra);
+    font-weight: 700;
+  }
+  .section-title {
+    font-family: Georgia, serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    flex: 1;
+  }
+  .section-meta {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
 
-  /* ---------- Kanban ---------- */
-  .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .kanban-col{
-    background:var(--card);border:1px solid var(--border);
-    border-radius:var(--radius);padding:12px;min-height:180px;
+  /* ---------- MAPA DEL PLAN ---------- */
+  .plan-map {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    background: var(--bg);
+    border: 2px solid var(--line);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
   }
-  .kanban-header{
-    display:flex;justify-content:space-between;align-items:center;
-    font-weight:700;font-size:.88rem;margin-bottom:10px;
-    padding-bottom:8px;border-bottom:1px solid var(--border);
+  .plan-map .node {
+    padding: 8px 12px;
+    border: 2px solid var(--line);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-align: center;
+    background: var(--bg-2);
+    min-width: 76px;
   }
-  .kanban-count{
-    color:var(--muted);font-weight:500;font-size:.78rem;
-    background:var(--bg);padding:1px 8px;border-radius:99px;
+  .plan-map .node span {
+    display: block;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 0.05em;
+    font-weight: 500;
   }
-  .kanban-list{
-    min-height:80px;display:flex;flex-direction:column;gap:8px;
-    border-radius:8px;padding:4px;
+  .plan-map .arrow { font-size: 14px; color: var(--terra); font-weight: 700; }
+  @media (max-width: 640px) { .plan-map .arrow { transform: rotate(90deg); } }
+
+  /* ---------- FORMULARIOS ---------- */
+  label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
   }
-  .kanban-list.drag-over{
-    background:var(--accent-soft);
-    outline:2px dashed var(--accent);
-    outline-offset:-4px;
+  input, textarea, select {
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    padding: 10px 12px;
+    background: var(--bg);
+    color: var(--ink);
+    border: 2px solid var(--line);
+    width: 100%;
   }
-  .kanban-item{
-    background:var(--bg);border:1px solid var(--border);border-radius:8px;
-    padding:8px 10px;font-size:.86rem;display:flex;align-items:center;gap:5px;
-    cursor:grab;
+  input:focus, textarea:focus, select:focus {
+    outline: 3px solid var(--moss);
+    outline-offset: -1px;
   }
-  .kanban-item:active{cursor:grabbing}
-  .kanban-item.dragging{opacity:.4}
-  .kanban-item .texto{flex:1;word-wrap:break-word;overflow-wrap:break-word;min-width:0}
-  .kanban-btn{
-    border:1px solid var(--border);background:transparent;color:var(--muted);
-    cursor:pointer;border-radius:5px;padding:1px 5px;font-size:.72rem;flex-shrink:0;
+  textarea { resize: vertical; min-height: 90px; }
+
+  .add-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
   }
-  .kanban-btn:hover{border-color:var(--accent);color:var(--accent)}
-  .kanban-btn.del:hover{border-color:var(--danger);color:var(--danger)}
-  .kanban-move{
-    width:auto;padding:1px 3px;font-size:.72rem;border-radius:5px;
-    background:transparent;border:1px solid var(--border);color:var(--muted);
-    cursor:pointer;flex-shrink:0;
+  .add-form > input[type="text"] { flex: 2; min-width: 200px; }
+  .add-form > select { flex: 1; min-width: 100px; }
+  .add-form > button { flex: 0 0 auto; }
+
+  /* ---------- BOTONES ---------- */
+  button.btn {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    background: var(--ink);
+    color: var(--bg);
+    border: 2px solid var(--line);
+    cursor: pointer;
+    transition: transform 0.05s ease, box-shadow 0.05s ease;
+    box-shadow: 3px 3px 0 var(--shadow);
+    white-space: nowrap;
   }
-  .kanban-vacio{
-    color:var(--muted);font-size:.8rem;text-align:center;
-    padding:14px 0;font-style:italic;
+  button.btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--shadow); }
+  button.btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--shadow); }
+  button.btn.moss { background: var(--moss); color: var(--bg); }
+  button.btn.terra { background: var(--terra); color: var(--bg); }
+  button.btn.ghost {
+    background: transparent; color: var(--ink);
+    box-shadow: none; padding: 6px 10px; font-size: 10px;
   }
-  @media (max-width:900px){
-    .kanban{
-      display:flex;overflow-x:auto;gap:10px;padding-bottom:10px;
-      scroll-snap-type:x mandatory;
+  button.btn.ghost:hover { background: var(--ink); color: var(--bg); transform: none; }
+  button.btn.danger {
+    background: transparent; color: var(--terra); border-color: var(--terra);
+    box-shadow: none; padding: 6px 10px; font-size: 10px;
+  }
+  button.btn.danger:hover { background: var(--terra); color: var(--bg); transform: none; }
+
+  /* ---------- LISTA DE OBJETIVOS ---------- */
+  .lista { display: flex; flex-direction: column; gap: 10px; }
+
+  .obj {
+    padding: 14px 14px 14px 18px;
+    background: var(--bg);
+    border: 2px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .obj::before {
+    content: '';
+    position: absolute; top: 0; left: 0;
+    width: 6px; height: 100%;
+    background: var(--terra);
+  }
+  .obj.hecho::before { background: var(--moss); }
+  .obj.hecho h3 { text-decoration: line-through; opacity: 0.6; }
+  .obj-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .obj-head .periodo {
+    font-size: 10px;
+    font-family: ui-monospace, monospace;
+    letter-spacing: 0.15em;
+    color: var(--terra);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .obj h3 { font-size: 16px; margin-bottom: 4px; }
+  .obj .desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+
+  .barra {
+    height: 12px;
+    background: var(--bg-2);
+    border: 2px solid var(--line);
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .barra span {
+    display: block; height: 100%;
+    background: var(--moss);
+    transition: width 0.3s;
+  }
+  .prog-controls {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 8px;
+  }
+  .prog-controls input[type="range"] {
+    flex: 1; padding: 0; border: none; background: transparent;
+    accent-color: var(--moss);
+  }
+  .prog-controls .pct {
+    font-size: 11px; font-weight: 700;
+    font-family: ui-monospace, monospace;
+    min-width: 40px; text-align: right;
+    letter-spacing: 0.05em;
+  }
+  .prog-controls.auto {
+    font-size: 11px; color: var(--muted);
+    font-style: italic; padding: 4px 0;
+  }
+
+  /* ---------- SELECTOR DE PADRE ---------- */
+  .parent-filter {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px; padding: 12px;
+    background: var(--bg);
+    border: 2px dashed var(--line);
+    flex-wrap: wrap;
+  }
+  .parent-filter label { margin: 0; color: var(--terra); white-space: nowrap; }
+  .parent-filter select { flex: 1; min-width: 200px; }
+
+  /* ---------- VISIÓN ---------- */
+  .vision-textarea {
+    font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    font-size: 18px;
+    line-height: 1.65;
+    font-style: italic;
+    min-height: 160px;
+    padding: 20px;
+    background: var(--bg);
+    border: 2px solid var(--line);
+    color: var(--ink);
+    width: 100%;
+  }
+
+  /* ---------- DIARIO ---------- */
+  .entrada {
+    padding: 14px 14px 14px 18px;
+    background: var(--bg);
+    border: 2px solid var(--line);
+    position: relative;
+    margin-bottom: 10px;
+  }
+  .entrada::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 6px; height: 100%;
+    background: var(--moss);
+  }
+  .entrada-head {
+    display: flex; justify-content: space-between;
+    align-items: center; gap: 10px; margin-bottom: 6px;
+  }
+  .entrada .fecha {
+    font-size: 11px; font-weight: 700;
+    font-family: ui-monospace, monospace;
+    letter-spacing: 0.1em; color: var(--terra);
+    text-transform: uppercase;
+  }
+  .entrada h3 { font-size: 16px; margin-bottom: 4px; }
+  .entrada p { white-space: pre-wrap; font-size: 13px; color: var(--ink-soft); }
+
+  /* ---------- HÁBITOS ---------- */
+  .habito {
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap; padding: 12px 0;
+    border-bottom: 2px solid var(--line);
+  }
+  .habito:last-child { border-bottom: none; }
+  .habito .nombre {
+    flex: 1 1 140px; font-weight: 700;
+    font-size: 13px; font-family: Georgia, serif;
+  }
+  .habito .racha {
+    font-size: 10px; font-family: ui-monospace, monospace;
+    color: var(--muted); letter-spacing: 0.1em;
+    font-weight: 700; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .semana { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 2px; }
+  .dia {
+    width: 30px; padding: 4px 0;
+    border: 2px solid var(--line);
+    background: var(--bg); color: var(--ink-soft);
+    cursor: pointer; text-align: center;
+    display: flex; flex-direction: column;
+    align-items: center; line-height: 1.1;
+    flex-shrink: 0; font-family: ui-monospace, monospace;
+  }
+  .dia .letra { font-size: 8px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+  .dia .num { font-size: 12px; font-weight: 700; }
+  .dia.hoy { outline: 2px solid var(--terra); outline-offset: 1px; }
+  .dia.hecho { background: var(--moss); border-color: var(--moss); color: var(--bg); }
+
+  /* ---------- KANBAN ---------- */
+  .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kanban-col {
+    background: var(--bg-2);
+    border: 2px solid var(--line);
+    padding: 12px;
+    min-height: 180px;
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+  .kanban-header {
+    display: flex; justify-content: space-between; align-items: center;
+    font-weight: 700; font-size: 12px;
+    margin-bottom: 10px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--line);
+    font-family: Georgia, serif;
+  }
+  .kanban-count {
+    color: var(--bg); font-weight: 700; font-size: 10px;
+    background: var(--terra); padding: 2px 8px;
+    font-family: ui-monospace, monospace;
+  }
+  .kanban-list {
+    min-height: 80px; display: flex; flex-direction: column; gap: 6px; padding: 4px;
+  }
+  .kanban-list.drag-over {
+    background: var(--moss-soft);
+    outline: 2px dashed var(--moss); outline-offset: -4px;
+  }
+  .kanban-item {
+    background: var(--bg); border: 2px solid var(--line);
+    padding: 8px 10px; font-size: 12px;
+    display: flex; align-items: center; gap: 5px;
+    cursor: grab;
+  }
+  .kanban-item:active { cursor: grabbing; }
+  .kanban-item.dragging { opacity: 0.4; }
+  .kanban-item .texto {
+    flex: 1; word-wrap: break-word;
+    overflow-wrap: break-word; min-width: 0;
+  }
+  .kanban-btn {
+    border: 1px solid var(--line); background: transparent;
+    color: var(--muted); cursor: pointer;
+    padding: 1px 5px; font-size: 10px;
+    flex-shrink: 0; font-family: ui-monospace, monospace;
+  }
+  .kanban-btn:hover { background: var(--ink); color: var(--bg); }
+  .kanban-btn.del:hover { background: var(--terra); border-color: var(--terra); }
+  .kanban-move {
+    width: auto; padding: 1px 3px; font-size: 10px;
+    background: transparent; border: 1px solid var(--line);
+    color: var(--muted); cursor: pointer;
+    flex-shrink: 0; font-family: ui-monospace, monospace;
+  }
+  .kanban-vacio {
+    color: var(--muted); font-size: 11px; text-align: center;
+    padding: 14px 0; font-style: italic; font-family: Georgia, serif;
+  }
+  @media (max-width: 900px) {
+    .kanban {
+      display: flex; overflow-x: auto; gap: 10px;
+      padding-bottom: 10px; scroll-snap-type: x mandatory;
     }
-    .kanban-col{flex:0 0 260px;scroll-snap-align:start}
+    .kanban-col { flex: 0 0 260px; scroll-snap-align: start; }
   }
 
-  /* ---------- Utilidades ---------- */
-  .vacio{color:var(--muted);font-size:.9rem;text-align:center;padding:18px 0}
-  footer{margin-top:28px;text-align:center;font-size:.78rem;color:var(--muted)}
-  footer button{
-    margin:0 4px;padding:8px 14px;border-radius:9px;border:1px solid var(--border);
-    background:transparent;color:var(--muted);cursor:pointer;font-size:.8rem;
+  /* ---------- UTILIDADES ---------- */
+  .vacio {
+    color: var(--muted); font-size: 12px; text-align: center;
+    padding: 20px 0; font-style: italic; font-family: Georgia, serif;
   }
-  footer button:hover{border-color:var(--accent);color:var(--accent)}
+  .note {
+    font-size: 11px; color: var(--muted);
+    padding: 8px 0; letter-spacing: 0.05em; line-height: 1.5;
+  }
+  .grid-2 {
+    display: flex; gap: 10px;
+    flex-wrap: wrap; margin-bottom: 10px;
+  }
+  .grid-2 > div { flex: 1 1 180px; }
+  .grid-2 > .narrow { flex: 0 0 160px; }
 
-  /* ---------- Responsive ---------- */
-  @media (max-width:700px){
-    .habito{flex-direction:column;align-items:flex-start;gap:8px}
-    .habito .nombre{width:100%}
-    .habito .semana{width:100%}
-    .habito .racha{align-self:flex-end}
+  /* ---------- NAVEGACIÓN INFERIOR FIJA ---------- */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg-2);
+    border-top: 3px solid var(--line);
+    display: flex;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    box-shadow: 0 -4px 0 var(--shadow);
+  }
+  .bottom-nav button {
+    flex: 1; min-width: 80px;
+    padding: 12px 8px 10px;
+    background: transparent;
+    border: none;
+    border-right: 2px solid var(--line);
+    color: var(--muted);
+    font-family: ui-monospace, monospace;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 3px;
+    position: relative;
+    transition: background 0.1s;
+  }
+  .bottom-nav button:last-child { border-right: none; }
+  .bottom-nav button .tab-num {
+    font-size: 9px; letter-spacing: 0.2em;
+    color: var(--terra); font-weight: 700;
+  }
+  .bottom-nav button .tab-label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .bottom-nav button:hover { background: var(--bg-3); color: var(--ink); }
+  .bottom-nav button.activo { background: var(--moss); color: var(--bg); }
+  .bottom-nav button.activo .tab-num { color: var(--bg); opacity: 0.7; }
+  .bottom-nav button.activo::before {
+    content: ''; position: absolute;
+    top: -3px; left: 0; right: 0;
+    height: 3px; background: var(--terra);
+  }
+
+  /* ---------- PIE: EXPORTAR/IMPORTAR ---------- */
+  .backup-bar {
+    margin-top: 30px; padding: 14px;
+    border: 2px dashed var(--line);
+    display: flex; gap: 10px;
+    flex-wrap: wrap; justify-content: center; align-items: center;
+  }
+  .backup-bar .note { padding: 0; text-align: center; flex: 1 1 100%; order: -1; }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 700px) {
+    .habito { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .habito .nombre { width: 100%; }
+    .habito .semana { width: 100%; }
+    .habito .racha { align-self: flex-end; }
+    .panel-head h1 { font-size: 28px; }
   }
 </style>
 </head>
 <body>
-<div class="contenedor">
+<main class="contenedor">
 
   <!-- =====================================================================
-       🏠  CABECERA
+       PANEL: PLAN QUINQUENAL
        ===================================================================== -->
-  <header>
-    <h1>🧭 Mi Centro de Organización</h1>
-    <p>Diario · Hábitos · Objetivos · Tablero</p>
-  </header>
+  <section id="panel-plan" class="panel activo">
+
+    <div class="panel-head">
+      <h1>Plan Quinquenal</h1>
+      <div class="tag">Mapa de vida · Visión a 5 años</div>
+      <div class="year-tag" id="year-tag">2026 — 2031</div>
+    </div>
+
+    <div class="plan-map">
+      <div class="node">VISIÓN<span>5 años</span></div>
+      <div class="arrow">↓</div>
+      <div class="node">ANUAL<span>1 año</span></div>
+      <div class="arrow">↓</div>
+      <div class="node">TRIMESTRE<span>3 meses</span></div>
+      <div class="arrow">↓</div>
+      <div class="node">MES<span>1 mes</span></div>
+      <div class="arrow">↓</div>
+      <div class="node">SEMANA<span>7 días</span></div>
+    </div>
+
+    <!-- 01 / VISIÓN -->
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Visión a 5 años</h2>
+        <span class="section-meta">Horizonte</span>
+      </div>
+      <label for="p-vision">El destino</label>
+      <textarea id="p-vision" class="vision-textarea"
+                placeholder="¿Dónde quieres estar en 5 años? Escribe sin filtros..."></textarea>
+      <div style="margin-top:12px;text-align:right">
+        <button class="btn moss" id="p-vision-save">Guardar visión</button>
+      </div>
+    </div>
+
+    <!-- 02 / ANUAL -->
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Objetivos a 1 año</h2>
+        <span class="section-meta">Anual</span>
+      </div>
+      <form class="add-form" id="form-anual">
+        <input type="text" id="anual-titulo" placeholder="Título del objetivo anual">
+        <input type="text" id="anual-periodo" placeholder="Año" value="2026" style="max-width:100px">
+        <button class="btn terra" type="submit">Añadir</button>
+      </form>
+      <div class="lista" data-lista="anual"></div>
+    </div>
+
+    <!-- 03 / TRIMESTRAL -->
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">03</span>
+        <h2 class="section-title">Objetivos a 3 meses</h2>
+        <span class="section-meta">Trimestral</span>
+      </div>
+      <div class="parent-filter">
+        <label>Bajo el anual:</label>
+        <select id="sel-anual"></select>
+      </div>
+      <form class="add-form" id="form-trim">
+        <input type="text" id="trim-titulo" placeholder="Título del objetivo trimestral">
+        <select id="trim-periodo" style="max-width:120px">
+          <option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option>
+        </select>
+        <button class="btn terra" type="submit">Añadir</button>
+      </form>
+      <div class="lista" data-lista="trimestral"></div>
+    </div>
+
+    <!-- 04 / MENSUAL -->
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">04</span>
+        <h2 class="section-title">Objetivos a 1 mes</h2>
+        <span class="section-meta">Mensual</span>
+      </div>
+      <div class="parent-filter">
+        <label>Bajo el trimestral:</label>
+        <select id="sel-trim"></select>
+      </div>
+      <form class="add-form" id="form-mes">
+        <input type="text" id="mes-titulo" placeholder="Título del objetivo mensual">
+        <select id="mes-periodo" style="max-width:140px">
+          <option>Enero</option><option>Febrero</option><option>Marzo</option>
+          <option>Abril</option><option>Mayo</option><option>Junio</option>
+          <option>Julio</option><option>Agosto</option><option>Septiembre</option>
+          <option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+        </select>
+        <button class="btn terra" type="submit">Añadir</button>
+      </form>
+      <div class="lista" data-lista="mensual"></div>
+    </div>
+
+    <!-- 05 / SEMANAL -->
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">05</span>
+        <h2 class="section-title">Objetivos semanales</h2>
+        <span class="section-meta">Semanal</span>
+      </div>
+      <div class="parent-filter">
+        <label>Bajo el mensual:</label>
+        <select id="sel-mes"></select>
+      </div>
+      <form class="add-form" id="form-sem">
+        <input type="text" id="sem-titulo" placeholder="Título del objetivo semanal">
+        <select id="sem-periodo" style="max-width:130px">
+          <option>Semana 1</option><option>Semana 2</option>
+          <option>Semana 3</option><option>Semana 4</option>
+        </select>
+        <button class="btn terra" type="submit">Añadir</button>
+      </form>
+      <div class="lista" data-lista="semanal"></div>
+    </div>
+  </section>
 
   <!-- =====================================================================
-       🗂️  PESTAÑAS
+       PANEL: DIARIO
        ===================================================================== -->
-  <nav class="tabs">
-    <button data-tab="diario" class="activo">📔 Diario</button>
-    <button data-tab="habitos">✅ Hábitos</button>
-    <button data-tab="objetivos">🎯 Objetivos</button>
-    <button data-tab="kanban">📋 Tablero</button>
-  </nav>
+  <section id="panel-diario" class="panel">
+    <div class="panel-head">
+      <h1>Diario</h1>
+      <div class="tag">Registro de días</div>
+    </div>
 
-  <!-- =====================================================================
-       📔  PANEL: DIARIO
-       ===================================================================== -->
-  <section id="panel-diario" class="panel activo">
-    <div class="card">
-      <h2>Nueva entrada</h2>
-      <div class="fila">
-        <div style="flex:0 0 170px">
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Nueva entrada</h2>
+      </div>
+      <div class="grid-2">
+        <div class="narrow">
           <label for="d-fecha">Fecha</label>
           <input type="date" id="d-fecha">
         </div>
@@ -276,237 +702,532 @@
       </div>
       <label for="d-texto">Contenido</label>
       <textarea id="d-texto" placeholder="Escribe libremente..."></textarea>
-      <div style="margin-top:12px">
-        <button class="btn" id="d-guardar">Guardar entrada</button>
+      <div style="margin-top:12px;text-align:right">
+        <button class="btn moss" id="d-guardar">Guardar entrada</button>
       </div>
     </div>
 
-    <div class="card">
-      <h2>Entradas guardadas</h2>
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Entradas</h2>
+      </div>
       <div id="lista-diario"></div>
     </div>
   </section>
 
   <!-- =====================================================================
-       ✅  PANEL: HÁBITOS
+       PANEL: HÁBITOS
        ===================================================================== -->
   <section id="panel-habitos" class="panel">
-    <div class="card">
-      <h2>Añadir hábito</h2>
-      <div class="fila">
-        <div>
-          <label for="h-nombre">Nombre del hábito</label>
-          <input type="text" id="h-nombre" placeholder="Ej: Leer 20 minutos, Beber 2L de agua...">
-        </div>
-        <div style="flex:0 0 auto;display:flex;align-items:flex-end">
-          <button class="btn" id="h-agregar">Añadir</button>
-        </div>
-      </div>
-      <p style="margin-top:8px;font-size:.8rem;color:var(--muted)">
-        Pulsa cada día para marcarlo como cumplido. Puedes deslizar la fila horizontalmente.
-      </p>
+    <div class="panel-head">
+      <h1>Hábitos</h1>
+      <div class="tag">Constancia diaria</div>
     </div>
 
-    <div class="card">
-      <h2>Mis hábitos</h2>
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Añadir hábito</h2>
+      </div>
+      <form class="add-form" id="form-habito">
+        <input type="text" id="h-nombre" placeholder="Ej: Leer 20 minutos, Beber 2L de agua...">
+        <button class="btn moss" type="submit">Añadir</button>
+      </form>
+      <p class="note">Pulsa cada día para marcarlo. Desliza horizontalmente si hay muchos días.</p>
+    </div>
+
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Mis hábitos</h2>
+      </div>
       <div id="lista-habitos"></div>
     </div>
   </section>
 
   <!-- =====================================================================
-       🎯  PANEL: OBJETIVOS
+       PANEL: TABLERO (KANBAN)
        ===================================================================== -->
-  <section id="panel-objetivos" class="panel">
-    <div class="card">
-      <h2>Nuevo objetivo</h2>
-      <div class="fila">
-        <div>
-          <label for="o-nombre">Objetivo del mes</label>
-          <input type="text" id="o-nombre" placeholder="Ej: Terminar el curso de inglés, Ahorrar 300 €...">
-        </div>
-      </div>
-      <label for="o-desc">Descripción / primeros pasos</label>
-      <textarea id="o-desc" style="min-height:70px" placeholder="¿En qué consiste? ¿Cuál es el primer paso?"></textarea>
-      <div style="margin-top:12px">
-        <button class="btn" id="o-agregar">Añadir objetivo</button>
-      </div>
+  <section id="panel-tablero" class="panel">
+    <div class="panel-head">
+      <h1>Tablero</h1>
+      <div class="tag">Flujo semanal</div>
     </div>
 
-    <div class="card">
-      <div class="mes-selector">
-        <h2>Objetivos del mes</h2>
-        <div class="nav">
-          <button id="mes-prev" title="Mes anterior">‹</button>
-          <span class="mes-actual" id="mes-actual"></span>
-          <button id="mes-next" title="Mes siguiente">›</button>
-        </div>
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Nueva tarea</h2>
       </div>
-      <div id="lista-objetivos"></div>
-    </div>
-  </section>
-
-  <!-- =====================================================================
-       📋  PANEL: KANBAN
-       ===================================================================== -->
-  <section id="panel-kanban" class="panel">
-    <div class="card">
-      <h2>Nueva tarea</h2>
-      <div class="fila">
-        <div>
-          <label for="k-texto">Tarea</label>
-          <input type="text" id="k-texto" placeholder="¿Qué hay que hacer?">
-        </div>
-        <div style="flex:0 0 170px">
-          <label for="k-columna">Columna</label>
-          <select id="k-columna">
-            <option value="hoy">🔥 Hoy</option>
-            <option value="manana">🌅 Mañana</option>
-            <option value="semana">📅 Esta semana</option>
-            <option value="proxima">➡️ Próxima semana</option>
-          </select>
-        </div>
-        <div style="flex:0 0 auto;display:flex;align-items:flex-end">
-          <button class="btn" id="k-agregar">Añadir</button>
-        </div>
-      </div>
-      <p style="margin-top:8px;font-size:.8rem;color:var(--muted)">
-        💡 Arrastra las tarjetas entre columnas. En móvil, usa el desplegable de cada tarjeta.
-      </p>
+      <form class="add-form" id="form-tarea">
+        <input type="text" id="k-texto" placeholder="¿Qué hay que hacer?">
+        <select id="k-columna" style="max-width:180px">
+          <option value="hoy">🔥 Hoy</option>
+          <option value="manana">🌅 Mañana</option>
+          <option value="semana">📅 Esta semana</option>
+          <option value="proxima">➡️ Próxima semana</option>
+        </select>
+        <button class="btn terra" type="submit">Añadir</button>
+      </form>
+      <p class="note">Arrastra las tarjetas entre columnas. En móvil, usa el desplegable.</p>
     </div>
 
-    <!-- Las columnas se generan dinámicamente desde CONFIG.columnasKanban -->
     <div class="kanban" id="kanban-board"></div>
   </section>
 
-  <!-- =====================================================================
-       💾  PIE: EXPORTAR / IMPORTAR
-       ===================================================================== -->
-  <footer>
-    <button id="exportar">⬇ Exportar copia</button>
-    <button id="importar-btn">⬆ Importar copia</button>
+  <div class="backup-bar">
+    <p class="note">Los datos viven solo en este navegador. Exporta regularmente.</p>
+    <button class="btn ghost" id="exportar">⬇ Exportar</button>
+    <button class="btn ghost" id="importar-btn">⬆ Importar</button>
     <input type="file" id="importar" accept="application/json" hidden>
-    <p style="margin-top:8px">
-      Los datos viven solo en este navegador. Exporta de vez en cuando para no perderlos.
-    </p>
-  </footer>
+  </div>
 
-</div>
+</main>
 
 <!-- =====================================================================
-     🧠  LÓGICA
+     NAVEGACIÓN INFERIOR FIJA
      ===================================================================== -->
+<nav class="bottom-nav">
+  <button data-tab="plan" class="activo">
+    <span class="tab-num">01</span><span class="tab-label">Plan</span>
+  </button>
+  <button data-tab="diario">
+    <span class="tab-num">02</span><span class="tab-label">Diario</span>
+  </button>
+  <button data-tab="habitos">
+    <span class="tab-num">03</span><span class="tab-label">Hábitos</span>
+  </button>
+  <button data-tab="tablero">
+    <span class="tab-num">04</span><span class="tab-label">Tablero</span>
+  </button>
+</nav>
+
 <script>
 /* ============================================================
-   1. ESTADO Y PERSISTENCIA
+   1. ESTADO
    ============================================================ */
 let datos = {
-  diario: [],     // { id, fecha, titulo, texto }
-  habitos: [],    // { id, nombre, dias: { 'YYYY-MM-DD': true } }
-  objetivos: [],  // { id, mes, nombre, desc, progreso, hecho }
-  tablero: []     // { id, texto, columna }
+  diario: [],
+  habitos: [],
+  tablero: [],
+  plan: { vision: "", objetivos: [] }
 };
 
-function cargar(){
-  try{
+const planUI = { anual: null, trim: null, mes: null };
+
+function cargar() {
+  try {
     const raw = localStorage.getItem(CONFIG.claveStorage);
-    if(!raw) return;
+    if (!raw) return;
     const p = JSON.parse(raw);
     datos = {
-      diario:    p.diario    || [],
-      habitos:   p.habitos   || [],
-      objetivos: p.objetivos || [],
-      tablero:   p.tablero   || []
+      diario: p.diario || [],
+      habitos: p.habitos || [],
+      tablero: p.tablero || [],
+      plan: p.plan || { vision: "", objetivos: [] }
     };
-  }catch(e){ console.warn('No se pudo cargar:', e); }
+  } catch (e) { console.warn('No se pudo cargar:', e); }
 }
 
-function guardar(){
-  try{ localStorage.setItem(CONFIG.claveStorage, JSON.stringify(datos)); }
-  catch(e){ alert('No se pudo guardar. Espacio lleno.'); }
+function guardar() {
+  try { localStorage.setItem(CONFIG.claveStorage, JSON.stringify(datos)); }
+  catch (e) { alert('No se pudo guardar.'); }
 }
 
 /* ============================================================
    2. UTILIDADES
    ============================================================ */
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-function iso(d){
+function iso(d) {
   d = new Date(d);
   return d.getFullYear() + '-' +
-         String(d.getMonth()+1).padStart(2,'0') + '-' +
-         String(d.getDate()).padStart(2,'0');
+         String(d.getMonth() + 1).padStart(2, '0') + '-' +
+         String(d.getDate()).padStart(2, '0');
 }
 const hoy = () => iso(new Date());
 
-function esc(s){
+function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function fechaBonita(isoStr){
-  if(!isoStr) return '';
-  const [a,m,d] = isoStr.split('-');
+function fechaBonita(s) {
+  if (!s) return '';
+  const [a, m, d] = s.split('-');
   return `${d}/${m}/${a}`;
 }
 
-function mesActualClave(){
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-}
-
-function mesBonito(clave){
-  const [a,m] = clave.split('-');
-  return `${CONFIG.nombresMes[Number(m)-1]} ${a}`;
-}
-
 /* ============================================================
-   3. NAVEGACIÓN ENTRE PESTAÑAS
+   3. NAVEGACIÓN
    ============================================================ */
-function setupTabs(){
-  document.querySelectorAll('.tabs button').forEach(btn => {
+function setupTabs() {
+  document.querySelectorAll('.bottom-nav button').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('activo'));
+      document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('activo'));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('activo'));
       btn.classList.add('activo');
       document.getElementById('panel-' + btn.dataset.tab).classList.add('activo');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
 }
 
 /* ============================================================
-   4. DIARIO
+   4. PLAN QUINQUENAL
    ============================================================ */
-function setupDiario(){
+
+function nivelProgress(o) {
+  const hijos = datos.plan.objetivos.filter(h => h.parentId === o.id);
+  if (hijos.length > 0) {
+    if (o.nivel === 3) {
+      const hechos = hijos.filter(h => h.hecho).length;
+      return Math.round((hechos / hijos.length) * 100);
+    }
+    const sum = hijos.reduce((acc, h) => acc + nivelProgress(h), 0);
+    return Math.round(sum / hijos.length);
+  }
+  return o.progreso || 0;
+}
+
+function renderPlan() {
+  document.getElementById('p-vision').value = datos.plan.vision || '';
+  renderListaNivel(1, null, 'anual');
+  renderSelectorAnual();
+  if (planUI.anual) renderListaNivel(2, planUI.anual, 'trimestral');
+  else mostrarVacio('trimestral', 'Selecciona primero un objetivo anual.');
+  renderSelectorTrim();
+  if (planUI.trim) renderListaNivel(3, planUI.trim, 'mensual');
+  else mostrarVacio('mensual', 'Selecciona primero un objetivo trimestral.');
+  renderSelectorMes();
+  if (planUI.mes) renderListaNivel(4, planUI.mes, 'semanal');
+  else mostrarVacio('semanal', 'Selecciona primero un objetivo mensual.');
+}
+
+function mostrarVacio(listaId, mensaje) {
+  const $l = document.querySelector(`[data-lista="${listaId}"]`);
+  if ($l) $l.innerHTML = `<p class="vacio">${mensaje}</p>`;
+}
+
+function renderListaNivel(nivel, parentId, listaId) {
+  const $l = document.querySelector(`[data-lista="${listaId}"]`);
+  if (!$l) return;
+
+  const items = datos.plan.objetivos.filter(o =>
+    o.nivel === nivel && o.parentId === parentId);
+
+  if (!items.length) {
+    $l.innerHTML = '<p class="vacio">Sin objetivos todavía.</p>';
+    return;
+  }
+
+  $l.innerHTML = items.map(o => renderObjetivo(o)).join('');
+
+  $l.querySelectorAll('[data-del]').forEach(b => {
+    b.addEventListener('click', () => {
+      if (!confirm('¿Eliminar este objetivo y sus sub-objetivos?')) return;
+      eliminarObjetivo(b.dataset.del);
+    });
+  });
+
+  $l.querySelectorAll('[data-progreso]').forEach(el => {
+    el.addEventListener('input', () => {
+      const o = datos.plan.objetivos.find(x => x.id === el.dataset.progreso);
+      if (!o) return;
+      o.progreso = Number(el.value);
+      guardar();
+      const cont = el.closest('.obj');
+      cont.querySelector('.barra span').style.width = o.progreso + '%';
+      cont.querySelector('.pct').textContent = o.progreso + '%';
+    });
+    el.addEventListener('change', renderPlan);
+  });
+
+  $l.querySelectorAll('[data-toggle-hecho]').forEach(b => {
+    b.addEventListener('click', () => {
+      const o = datos.plan.objetivos.find(x => x.id === b.dataset.toggleHecho);
+      if (!o) return;
+      o.hecho = !o.hecho;
+      guardar();
+      renderPlan();
+    });
+  });
+}
+
+function renderObjetivo(o) {
+  const esSemanal = o.nivel === 4;
+  const tieneHijos = datos.plan.objetivos.some(h => h.parentId === o.id);
+  const prog = nivelProgress(o);
+
+  const head = `
+    <div class="obj-head">
+      <div style="flex:1;min-width:0">
+        <div class="periodo">${esc(o.periodo)}</div>
+        <h3>${esc(o.titulo)}</h3>
+        ${o.descripcion ? `<p class="desc">${esc(o.descripcion)}</p>` : ''}
+      </div>
+      <button class="btn danger" data-del="${o.id}" title="Eliminar">✕</button>
+    </div>
+  `;
+
+  if (esSemanal) {
+    return `
+      <div class="obj ${o.hecho ? 'hecho' : ''}" data-id="${o.id}">
+        ${head}
+        <button class="btn ${o.hecho ? 'moss' : 'ghost'}" data-toggle-hecho="${o.id}">
+          ${o.hecho ? '✓ Completado' : 'Marcar como hecho'}
+        </button>
+      </div>
+    `;
+  }
+
+  const progresoUI = tieneHijos
+    ? `<div class="prog-controls auto">Auto · ${prog}% (de ${datos.plan.objetivos.filter(h => h.parentId === o.id).length} sub-objetivos)</div>`
+    : `<div class="prog-controls">
+         <input type="range" min="0" max="100" step="5" value="${o.progreso || 0}" data-progreso="${o.id}">
+         <span class="pct">${prog}%</span>
+       </div>`;
+
+  return `
+    <div class="obj ${prog >= 100 ? 'hecho' : ''}" data-id="${o.id}">
+      ${head}
+      <div class="barra"><span style="width:${prog}%"></span></div>
+      ${progresoUI}
+    </div>
+  `;
+}
+
+function renderSelectorAnual() {
+  const sel = document.getElementById('sel-anual');
+  const anuales = datos.plan.objetivos.filter(o => o.nivel === 1);
+  if (!anuales.length) {
+    sel.innerHTML = '<option value="">— sin objetivos anuales —</option>';
+    sel.disabled = true;
+    planUI.anual = null;
+    return;
+  }
+  sel.disabled = false;
+  sel.innerHTML = anuales.map(a =>
+    `<option value="${a.id}" ${planUI.anual === a.id ? 'selected' : ''}>${esc(a.periodo)} · ${esc(a.titulo)}</option>`
+  ).join('');
+  if (!planUI.anual || !anuales.find(a => a.id === planUI.anual)) {
+    planUI.anual = anuales[0].id;
+    sel.value = planUI.anual;
+  }
+}
+
+function renderSelectorTrim() {
+  const sel = document.getElementById('sel-trim');
+  const trims = datos.plan.objetivos.filter(o =>
+    o.nivel === 2 && o.parentId === planUI.anual);
+  if (!trims.length) {
+    sel.innerHTML = '<option value="">— sin objetivos trimestrales —</option>';
+    sel.disabled = true;
+    planUI.trim = null;
+    return;
+  }
+  sel.disabled = false;
+  sel.innerHTML = trims.map(t =>
+    `<option value="${t.id}" ${planUI.trim === t.id ? 'selected' : ''}>${esc(t.periodo)} · ${esc(t.titulo)}</option>`
+  ).join('');
+  if (!planUI.trim || !trims.find(t => t.id === planUI.trim)) {
+    planUI.trim = trims[0].id;
+    sel.value = planUI.trim;
+  }
+}
+
+function renderSelectorMes() {
+  const sel = document.getElementById('sel-mes');
+  const meses = datos.plan.objetivos.filter(o =>
+    o.nivel === 3 && o.parentId === planUI.trim);
+  if (!meses.length) {
+    sel.innerHTML = '<option value="">— sin objetivos mensuales —</option>';
+    sel.disabled = true;
+    planUI.mes = null;
+    return;
+  }
+  sel.disabled = false;
+  sel.innerHTML = meses.map(m =>
+    `<option value="${m.id}" ${planUI.mes === m.id ? 'selected' : ''}>${esc(m.periodo)} · ${esc(m.titulo)}</option>`
+  ).join('');
+  if (!planUI.mes || !meses.find(m => m.id === planUI.mes)) {
+    planUI.mes = meses[0].id;
+    sel.value = planUI.mes;
+  }
+}
+
+function eliminarObjetivo(id) {
+  const aBorrar = new Set([id]);
+  let añadidos = true;
+  while (añadidos) {
+    añadidos = false;
+    datos.plan.objetivos.forEach(o => {
+      if (o.parentId && aBorrar.has(o.parentId) && !aBorrar.has(o.id)) {
+        aBorrar.add(o.id);
+        añadidos = true;
+      }
+    });
+  }
+  datos.plan.objetivos = datos.plan.objetivos.filter(o => !aBorrar.has(o.id));
+  guardar();
+  renderPlan();
+}
+
+function setupPlanForms() {
+  document.getElementById('p-vision-save').addEventListener('click', () => {
+    datos.plan.vision = document.getElementById('p-vision').value;
+    guardar();
+    alert('Visión guardada.');
+  });
+
+  document.getElementById('form-anual').addEventListener('submit', e => {
+    e.preventDefault();
+    const titulo = document.getElementById('anual-titulo').value.trim();
+    const periodo = document.getElementById('anual-periodo').value.trim() || String(new Date().getFullYear());
+    if (!titulo) return;
+    datos.plan.objetivos.push({
+      id: uid(), nivel: 1, parentId: null,
+      periodo, titulo, descripcion: '',
+      progreso: 0, hecho: false
+    });
+    guardar();
+    document.getElementById('anual-titulo').value = '';
+    renderPlan();
+  });
+
+  document.getElementById('form-trim').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!planUI.anual) { alert('Selecciona primero un objetivo anual.'); return; }
+    const titulo = document.getElementById('trim-titulo').value.trim();
+    const periodo = document.getElementById('trim-periodo').value;
+    if (!titulo) return;
+    datos.plan.objetivos.push({
+      id: uid(), nivel: 2, parentId: planUI.anual,
+      periodo, titulo, descripcion: '',
+      progreso: 0, hecho: false
+    });
+    guardar();
+    document.getElementById('trim-titulo').value = '';
+    renderPlan();
+  });
+
+  document.getElementById('form-mes').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!planUI.trim) { alert('Selecciona primero un objetivo trimestral.'); return; }
+    const titulo = document.getElementById('mes-titulo').value.trim();
+    const periodo = document.getElementById('mes-periodo').value;
+    if (!titulo) return;
+    datos.plan.objetivos.push({
+      id: uid(), nivel: 3, parentId: planUI.trim,
+      periodo, titulo, descripcion: '',
+      progreso: 0, hecho: false
+    });
+    guardar();
+    document.getElementById('mes-titulo').value = '';
+    renderPlan();
+  });
+
+  document.getElementById('form-sem').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!planUI.mes) { alert('Selecciona primero un objetivo mensual.'); return; }
+    const titulo = document.getElementById('sem-titulo').value.trim();
+    const periodo = document.getElementById('sem-periodo').value;
+    if (!titulo) return;
+    datos.plan.objetivos.push({
+      id: uid(), nivel: 4, parentId: planUI.mes,
+      periodo, titulo, descripcion: '',
+      progreso: 0, hecho: false
+    });
+    guardar();
+    document.getElementById('sem-titulo').value = '';
+    renderPlan();
+  });
+
+  document.getElementById('sel-anual').addEventListener('change', e => {
+    planUI.anual = e.target.value || null;
+    planUI.trim = null;
+    planUI.mes = null;
+    renderPlan();
+  });
+  document.getElementById('sel-trim').addEventListener('change', e => {
+    planUI.trim = e.target.value || null;
+    planUI.mes = null;
+    renderPlan();
+  });
+  document.getElementById('sel-mes').addEventListener('change', e => {
+    planUI.mes = e.target.value || null;
+    renderPlan();
+  });
+}
+
+function cargarPlantillaSiVacia() {
+  if (datos.plan.vision || datos.plan.objetivos.length > 0) return;
+
+  datos.plan.vision = "En 5 años quiero haber construido una vida con propósito: un trabajo creativo que me apasione, una relación sólida, un hogar propio y la libertad económica para elegir cómo pasar mi tiempo. Quiero haber viajado por Asia, aprendido japonés y estar en la mejor forma física de mi vida.";
+
+  function add(nivel, parentId, periodo, titulo, descripcion) {
+    const id = uid();
+    datos.plan.objetivos.push({
+      id, nivel, parentId, periodo, titulo,
+      descripcion: descripcion || '',
+      progreso: 0, hecho: false
+    });
+    return id;
+  }
+
+  const a1 = add(1, null, '2026', 'Dominar el inglés (nivel B2)',
+                 'Fluidez conversacional y aprobar el examen oficial.');
+  const t1 = add(2, a1, 'Q1', 'Consolidar el nivel B1', '');
+  const m1 = add(3, t1, 'Enero', 'Completar unidades 1–3 del curso', '');
+  add(4, m1, 'Semana 1', 'Unidad 1 + 10 flashcards', '');
+  add(4, m1, 'Semana 2', 'Unidad 2 + 1 película en VO', '');
+  add(4, m1, 'Semana 3', 'Unidad 3 + 3 podcasts', '');
+  add(4, m1, 'Semana 4', 'Repaso + mini-examen', '');
+  add(2, a1, 'Q2', 'Preparar el examen B2', '');
+
+  const a2 = add(1, null, '2026', 'Ahorrar 6.000 €',
+                 'Fondo de emergencia (3.000 €) + viaje a Japón (3.000 €).');
+  const t2 = add(2, a2, 'Q1', 'Ahorrar 1.500 €', '');
+  const m2 = add(3, t2, 'Enero', 'Ahorrar 500 €', '');
+  add(4, m2, 'Semana 1', 'Revisar gastos fijos del hogar', '');
+  add(4, m2, 'Semana 2', 'Cancelar 2 suscripciones que no uso', '');
+
+  guardar();
+}
+
+/* ============================================================
+   5. DIARIO
+   ============================================================ */
+function setupDiario() {
   document.getElementById('d-guardar').addEventListener('click', () => {
-    const fecha  = document.getElementById('d-fecha').value || hoy();
+    const fecha = document.getElementById('d-fecha').value || hoy();
     const titulo = document.getElementById('d-titulo').value.trim();
-    const texto  = document.getElementById('d-texto').value.trim();
-
-    if(!titulo && !texto){ alert('Escribe al menos un título o un texto.'); return; }
-
+    const texto = document.getElementById('d-texto').value.trim();
+    if (!titulo && !texto) { alert('Escribe al menos un título o un texto.'); return; }
     datos.diario.push({ id: uid(), fecha, titulo: titulo || '(Sin título)', texto });
     guardar();
     document.getElementById('d-titulo').value = '';
-    document.getElementById('d-texto').value  = '';
+    document.getElementById('d-texto').value = '';
     renderDiario();
   });
 }
 
-function renderDiario(){
+function renderDiario() {
   const $l = document.getElementById('lista-diario');
-  const lista = [...datos.diario].sort((a,b) =>
+  const lista = [...datos.diario].sort((a, b) =>
     b.fecha.localeCompare(a.fecha) || b.id.localeCompare(a.id));
 
-  if(!lista.length){
-    $l.innerHTML = '<p class="vacio">Todavía no has escrito nada. Empieza por hoy ✍️</p>';
+  if (!lista.length) {
+    $l.innerHTML = '<p class="vacio">Todavía no has escrito nada. Empieza por hoy.</p>';
     return;
   }
 
   $l.innerHTML = lista.map(e => `
     <div class="entrada">
-      <div class="meta">
+      <div class="entrada-head">
         <span class="fecha">${fechaBonita(e.fecha)}</span>
-        <button class="btn peligro" data-borrar="${e.id}">Eliminar</button>
+        <button class="btn danger" data-borrar="${e.id}">Eliminar</button>
       </div>
       <h3>${esc(e.titulo)}</h3>
       <p>${esc(e.texto)}</p>
@@ -515,7 +1236,7 @@ function renderDiario(){
 
   $l.querySelectorAll('[data-borrar]').forEach(b => {
     b.addEventListener('click', () => {
-      if(!confirm('¿Eliminar esta entrada del diario?')) return;
+      if (!confirm('¿Eliminar esta entrada del diario?')) return;
       datos.diario = datos.diario.filter(x => x.id !== b.dataset.borrar);
       guardar(); renderDiario();
     });
@@ -523,16 +1244,16 @@ function renderDiario(){
 }
 
 /* ============================================================
-   5. HÁBITOS
+   6. HÁBITOS
    ============================================================ */
-const LETRAS_DIA = ['D','L','M','X','J','V','S'];
+const LETRAS_DIA = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
-function setupHabitos(){
-  document.getElementById('h-agregar').addEventListener('click', () => {
+function setupHabitos() {
+  document.getElementById('form-habito').addEventListener('submit', e => {
+    e.preventDefault();
     const input = document.getElementById('h-nombre');
     const nombre = input.value.trim();
-    if(!nombre){ alert('Escribe un nombre para el hábito.'); return; }
-
+    if (!nombre) return;
     datos.habitos.push({ id: uid(), nombre, dias: {} });
     guardar();
     input.value = '';
@@ -540,28 +1261,23 @@ function setupHabitos(){
   });
 }
 
-function racha(h){
+function racha(h) {
   let n = 0;
   const d = new Date();
-  if(!h.dias[iso(d)]) d.setDate(d.getDate() - 1);
-  while(h.dias[iso(d)]){
-    n++;
-    d.setDate(d.getDate() - 1);
-  }
+  if (!h.dias[iso(d)]) d.setDate(d.getDate() - 1);
+  while (h.dias[iso(d)]) { n++; d.setDate(d.getDate() - 1); }
   return n;
 }
 
-function renderHabitos(){
+function renderHabitos() {
   const $l = document.getElementById('lista-habitos');
-
-  if(!datos.habitos.length){
-    $l.innerHTML = '<p class="vacio">Aún no tienes hábitos. Añade el primero arriba.</p>';
+  if (!datos.habitos.length) {
+    $l.innerHTML = '<p class="vacio">Aún no tienes hábitos.</p>';
     return;
   }
 
-  // Días a mostrar (CONFIG.diasHabitos, terminando en hoy)
   const dias = [];
-  for(let i = CONFIG.diasHabitos - 1; i >= 0; i--){
+  for (let i = CONFIG.diasHabitos - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     dias.push(d);
@@ -572,28 +1288,27 @@ function renderHabitos(){
       const f = iso(d);
       const hecho = !!h.dias[f];
       const esHoy = f === hoy();
-      return `<button class="dia ${hecho?'hecho':''} ${esHoy?'hoy':''}"
+      return `<button class="dia ${hecho ? 'hecho' : ''} ${esHoy ? 'hoy' : ''}"
                 data-habito="${h.id}" data-fecha="${f}" title="${fechaBonita(f)}">
                 <span class="letra">${LETRAS_DIA[d.getDay()]}</span>
                 <span class="num">${d.getDate()}</span>
               </button>`;
     }).join('');
-
     return `
       <div class="habito">
         <span class="nombre">${esc(h.nombre)}</span>
         <div class="semana">${celdas}</div>
-        <span class="racha">🔥 ${racha(h)} día(s)</span>
-        <button class="btn peligro" data-borrar-habito="${h.id}">✕</button>
+        <span class="racha">🔥 ${racha(h)} d</span>
+        <button class="btn danger" data-borrar-habito="${h.id}">✕</button>
       </div>`;
   }).join('');
 
   $l.querySelectorAll('[data-habito]').forEach(b => {
     b.addEventListener('click', () => {
       const h = datos.habitos.find(x => x.id === b.dataset.habito);
-      if(!h) return;
+      if (!h) return;
       const f = b.dataset.fecha;
-      if(h.dias[f]) delete h.dias[f];
+      if (h.dias[f]) delete h.dias[f];
       else h.dias[f] = true;
       guardar(); renderHabitos();
     });
@@ -601,7 +1316,7 @@ function renderHabitos(){
 
   $l.querySelectorAll('[data-borrar-habito]').forEach(b => {
     b.addEventListener('click', () => {
-      if(!confirm('¿Eliminar este hábito y todo su historial?')) return;
+      if (!confirm('¿Eliminar este hábito y su historial?')) return;
       datos.habitos = datos.habitos.filter(x => x.id !== b.dataset.borrarHabito);
       guardar(); renderHabitos();
     });
@@ -609,117 +1324,12 @@ function renderHabitos(){
 }
 
 /* ============================================================
-   6. OBJETIVOS
-   ============================================================ */
-let mesVista = mesActualClave();
-
-function setupObjetivos(){
-  document.getElementById('o-agregar').addEventListener('click', () => {
-    const nombre = document.getElementById('o-nombre').value.trim();
-    if(!nombre){ alert('Escribe un nombre para el objetivo.'); return; }
-
-    datos.objetivos.push({
-      id: uid(),
-      mes: mesVista,
-      nombre,
-      desc: document.getElementById('o-desc').value.trim(),
-      progreso: 0,
-      hecho: false
-    });
-    guardar();
-
-    document.getElementById('o-nombre').value = '';
-    document.getElementById('o-desc').value = '';
-    renderObjetivos();
-  });
-
-  document.getElementById('mes-prev').addEventListener('click', () => {
-    const [a,m] = mesVista.split('-').map(Number);
-    const d = new Date(a, m-2, 1);
-    mesVista = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    renderObjetivos();
-  });
-
-  document.getElementById('mes-next').addEventListener('click', () => {
-    const [a,m] = mesVista.split('-').map(Number);
-    const d = new Date(a, m, 1);
-    mesVista = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    renderObjetivos();
-  });
-}
-
-function renderObjetivos(){
-  const $l = document.getElementById('lista-objetivos');
-  document.getElementById('mes-actual').textContent = mesBonito(mesVista);
-
-  const lista = datos.objetivos.filter(o => o.mes === mesVista);
-
-  if(!lista.length){
-    $l.innerHTML = `<p class="vacio">Sin objetivos para ${mesBonito(mesVista)}. Añade uno arriba 🎯</p>`;
-    return;
-  }
-
-  $l.innerHTML = lista.map(o => `
-    <div class="objetivo">
-      <div class="cabecera">
-        <h3 class="${o.hecho ? 'hecho-titulo' : ''}">${o.hecho ? '✔ ' : ''}${esc(o.nombre)}</h3>
-        <button class="btn peligro" data-borrar-obj="${o.id}">Eliminar</button>
-      </div>
-      ${o.desc ? `<p class="desc">${esc(o.desc)}</p>` : ''}
-      <div class="barra"><span style="width:${o.progreso}%"></span></div>
-      <div class="controles">
-        <input type="range" min="0" max="100" step="5" value="${o.progreso}" data-progreso="${o.id}">
-        <span class="porcentaje">${o.progreso}%</span>
-        <button class="btn" style="padding:6px 12px;font-size:.8rem" data-toggle-obj="${o.id}">
-          ${o.hecho ? 'Reabrir' : 'Marcar hecho'}
-        </button>
-      </div>
-    </div>
-  `).join('');
-
-  $l.querySelectorAll('[data-progreso]').forEach(el => {
-    el.addEventListener('input', () => {
-      const o = datos.objetivos.find(x => x.id === el.dataset.progreso);
-      if(!o) return;
-      o.progreso = Number(el.value);
-      if(o.progreso === 100) o.hecho = true;
-      guardar();
-      const cont = el.closest('.objetivo');
-      cont.querySelector('.barra span').style.width = o.progreso + '%';
-      cont.querySelector('.porcentaje').textContent = o.progreso + '%';
-    });
-    el.addEventListener('change', renderObjetivos);
-  });
-
-  $l.querySelectorAll('[data-toggle-obj]').forEach(b => {
-    b.addEventListener('click', () => {
-      const o = datos.objetivos.find(x => x.id === b.dataset.toggleObj);
-      if(!o) return;
-      o.hecho = !o.hecho;
-      o.progreso = o.hecho ? 100 : o.progreso;
-      guardar(); renderObjetivos();
-    });
-  });
-
-  $l.querySelectorAll('[data-borrar-obj]').forEach(b => {
-    b.addEventListener('click', () => {
-      if(!confirm('¿Eliminar este objetivo?')) return;
-      datos.objetivos = datos.objetivos.filter(x => x.id !== b.dataset.borrarObj);
-      guardar(); renderObjetivos();
-    });
-  });
-}
-
-/* ============================================================
-   7. KANBAN
+   7. TABLERO (KANBAN)
    ============================================================ */
 const COLUMNAS = CONFIG.columnasKanban.map(c => c.id);
 
-/* --- 7.1 Generar las columnas del tablero desde CONFIG --- */
-function pintarColumnasKanban(){
+function pintarColumnasKanban() {
   const board = document.getElementById('kanban-board');
-  const colores = { hoy: '🔥', manana: '🌅', semana: '📅', proxima: '➡️' };
-
   board.innerHTML = CONFIG.columnasKanban.map(c => `
     <div class="kanban-col" data-col="${c.id}">
       <div class="kanban-header">
@@ -731,41 +1341,31 @@ function pintarColumnasKanban(){
   `).join('');
 }
 
-/* --- 7.2 Formulario para crear tareas --- */
-function setupKanbanForm(){
-  const input = document.getElementById('k-texto');
-  const select = document.getElementById('k-columna');
-
-  // Rellenar el <select> del formulario con las columnas configuradas
-  select.innerHTML = CONFIG.columnasKanban
-    .map(c => `<option value="${c.id}">${c.label}</option>`).join('');
-
-  document.getElementById('k-agregar').addEventListener('click', () => {
+function setupKanbanForm() {
+  document.getElementById('form-tarea').addEventListener('submit', e => {
+    e.preventDefault();
+    const input = document.getElementById('k-texto');
     const texto = input.value.trim();
-    if(!texto){ alert('Escribe una tarea.'); return; }
-    datos.tablero.push({ id: uid(), texto, columna: select.value });
+    const columna = document.getElementById('k-columna').value;
+    if (!texto) return;
+    datos.tablero.push({ id: uid(), texto, columna });
     guardar();
     input.value = '';
     input.focus();
     renderKanban();
   });
-
-  input.addEventListener('keydown', e => {
-    if(e.key === 'Enter') document.getElementById('k-agregar').click();
-  });
 }
 
-/* --- 7.3 Pintar las tarjetas de cada columna --- */
-function renderKanban(){
+function renderKanban() {
   COLUMNAS.forEach(col => {
-    const list  = document.querySelector(`[data-drop="${col}"]`);
+    const list = document.querySelector(`[data-drop="${col}"]`);
     const count = document.querySelector(`[data-count="${col}"]`);
-    if(!list) return;
+    if (!list) return;
 
     const items = datos.tablero.filter(t => t.columna === col);
-    if(count) count.textContent = items.length;
+    if (count) count.textContent = items.length;
 
-    if(!items.length){
+    if (!items.length) {
       list.innerHTML = '<p class="kanban-vacio">Sin tareas</p>';
       return;
     }
@@ -775,7 +1375,7 @@ function renderKanban(){
         <span class="texto">${esc(t.texto)}</span>
         <select class="kanban-move" data-move="${t.id}" title="Mover">
           ${CONFIG.columnasKanban.map(c =>
-            `<option value="${c.id}" ${t.columna===c.id?'selected':''}>${c.label.split(' ')[0]}</option>`
+            `<option value="${c.id}" ${t.columna === c.id ? 'selected' : ''}>${c.label.split(' ')[0]}</option>`
           ).join('')}
         </select>
         <button class="kanban-btn" data-edit="${t.id}" title="Editar">✎</button>
@@ -783,7 +1383,6 @@ function renderKanban(){
       </div>
     `).join('');
 
-    // Arrastrar
     list.querySelectorAll('.kanban-item').forEach(item => {
       item.addEventListener('dragstart', e => {
         e.dataTransfer.setData('text/plain', item.dataset.id);
@@ -793,36 +1392,33 @@ function renderKanban(){
       item.addEventListener('dragend', () => item.classList.remove('dragging'));
     });
 
-    // Mover (desplegable)
     list.querySelectorAll('[data-move]').forEach(sel => {
       sel.addEventListener('change', () => {
         const t = datos.tablero.find(x => x.id === sel.dataset.move);
-        if(!t) return;
+        if (!t) return;
         t.columna = sel.value;
         guardar(); renderKanban();
       });
     });
 
-    // Editar
     list.querySelectorAll('[data-edit]').forEach(b => {
       b.addEventListener('click', e => {
         e.stopPropagation();
         const t = datos.tablero.find(x => x.id === b.dataset.edit);
-        if(!t) return;
+        if (!t) return;
         const nuevo = prompt('Editar tarea:', t.texto);
-        if(nuevo === null) return;
+        if (nuevo === null) return;
         const limpio = nuevo.trim();
-        if(!limpio) return;
+        if (!limpio) return;
         t.texto = limpio;
         guardar(); renderKanban();
       });
     });
 
-    // Eliminar
     list.querySelectorAll('[data-borrar]').forEach(b => {
       b.addEventListener('click', e => {
         e.stopPropagation();
-        if(!confirm('¿Eliminar esta tarea?')) return;
+        if (!confirm('¿Eliminar esta tarea?')) return;
         datos.tablero = datos.tablero.filter(x => x.id !== b.dataset.borrar);
         guardar(); renderKanban();
       });
@@ -830,28 +1426,24 @@ function renderKanban(){
   });
 }
 
-/* --- 7.4 Drag & drop entre columnas --- */
-function setupDropZones(){
+function setupDropZones() {
   COLUMNAS.forEach(col => {
     const list = document.querySelector(`[data-drop="${col}"]`);
-    if(!list) return;
+    if (!list) return;
 
     list.addEventListener('dragenter', e => {
       e.preventDefault();
       list._counter = (list._counter || 0) + 1;
       list.classList.add('drag-over');
     });
-
     list.addEventListener('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
     });
-
     list.addEventListener('dragleave', () => {
       list._counter = Math.max(0, (list._counter || 0) - 1);
-      if(list._counter === 0) list.classList.remove('drag-over');
+      if (list._counter === 0) list.classList.remove('drag-over');
     });
-
     list.addEventListener('drop', e => {
       e.preventDefault();
       list._counter = 0;
@@ -859,24 +1451,24 @@ function setupDropZones(){
 
       const id = e.dataTransfer.getData('text/plain');
       const tarea = datos.tablero.find(x => x.id === id);
-      if(!tarea) return;
+      if (!tarea) return;
 
       const targetItem = e.target.closest ? e.target.closest('.kanban-item') : null;
-      if(targetItem && targetItem.dataset.id === id) return;
+      if (targetItem && targetItem.dataset.id === id) return;
 
       const oldIndex = datos.tablero.findIndex(x => x.id === id);
-      if(oldIndex === -1) return;
+      if (oldIndex === -1) return;
       datos.tablero.splice(oldIndex, 1);
       tarea.columna = col;
 
-      if(targetItem){
+      if (targetItem) {
         const targetIdx = datos.tablero.findIndex(x => x.id === targetItem.dataset.id);
-        if(targetIdx >= 0) datos.tablero.splice(targetIdx, 0, tarea);
+        if (targetIdx >= 0) datos.tablero.splice(targetIdx, 0, tarea);
         else datos.tablero.push(tarea);
       } else {
         let lastIdx = -1;
-        for(let i = datos.tablero.length - 1; i >= 0; i--){
-          if(datos.tablero[i].columna === col){ lastIdx = i; break; }
+        for (let i = datos.tablero.length - 1; i >= 0; i--) {
+          if (datos.tablero[i].columna === col) { lastIdx = i; break; }
         }
         datos.tablero.splice(lastIdx >= 0 ? lastIdx + 1 : datos.tablero.length, 0, tarea);
       }
@@ -889,12 +1481,12 @@ function setupDropZones(){
 /* ============================================================
    8. EXPORTAR / IMPORTAR
    ============================================================ */
-function setupBackup(){
+function setupBackup() {
   document.getElementById('exportar').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(datos, null, 2)], { type:'application/json' });
+    const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'organizacion-' + hoy() + '.json';
+    a.download = 'plan-' + hoy() + '.json';
     a.click();
     URL.revokeObjectURL(a.href);
   });
@@ -905,22 +1497,20 @@ function setupBackup(){
 
   document.getElementById('importar').addEventListener('change', ev => {
     const file = ev.target.files[0];
-    if(!file) return;
+    if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      try{
+      try {
         const nuevo = JSON.parse(reader.result);
-        if(!confirm('Esto reemplazará todos tus datos actuales. ¿Continuar?')) return;
+        if (!confirm('Esto reemplazará todos tus datos actuales. ¿Continuar?')) return;
         datos = {
-          diario:    nuevo.diario    || [],
-          habitos:   nuevo.habitos   || [],
-          objetivos: nuevo.objetivos || [],
-          tablero:   nuevo.tablero   || []
+          diario: nuevo.diario || [],
+          habitos: nuevo.habitos || [],
+          tablero: nuevo.tablero || [],
+          plan: nuevo.plan || { vision: "", objetivos: [] }
         };
         guardar(); renderTodo();
-      }catch(e){
-        alert('El archivo no es válido.');
-      }
+      } catch (e) { alert('El archivo no es válido.'); }
     };
     reader.readAsText(file);
     ev.target.value = '';
@@ -930,31 +1520,30 @@ function setupBackup(){
 /* ============================================================
    9. ARRANQUE
    ============================================================ */
-function renderTodo(){
+function renderTodo() {
   renderDiario();
   renderHabitos();
-  renderObjetivos();
   renderKanban();
+  renderPlan();
 }
 
-function init(){
-  // 1. Rellenar la fecha de hoy en el diario
+function init() {
+  const anio = new Date().getFullYear();
+  document.getElementById('year-tag').textContent = `${anio} — ${anio + 5}`;
   document.getElementById('d-fecha').value = hoy();
 
-  // 2. Crear las columnas del Kanban desde CONFIG
   pintarColumnasKanban();
 
-  // 3. Enganchar todos los listeners
   setupTabs();
+  setupPlanForms();
   setupDiario();
   setupHabitos();
-  setupObjetivos();
   setupKanbanForm();
   setupDropZones();
   setupBackup();
 
-  // 4. Cargar datos guardados y pintar
   cargar();
+  cargarPlantillaSiVacia();
   renderTodo();
 }
 
