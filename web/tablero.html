@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablero</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="contenedor">
+  <div class="panel-head">
+    <h1>Tablero</h1>
+    <div class="tag">Flujo de tareas</div>
+  </div>
+
+  <div class="block">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Nueva tarea</h2>
+    </div>
+    <form class="add-form" id="form-tarea">
+      <input type="text" id="k-texto" placeholder="¿Qué hay que hacer?">
+      <select id="k-columna" style="max-width:180px">
+        <option value="hoy">🔥 Hoy</option>
+        <option value="manana">🌅 Mañana</option>
+        <option value="semana">📅 Esta semana</option>
+        <option value="proxima">➡️ Próxima semana</option>
+      </select>
+      <button class="btn green" type="submit">Añadir</button>
+    </form>
+    <p class="note">Arrastra las tarjetas. En móvil usa el desplegable.</p>
+  </div>
+
+  <div class="kanban" id="kanban-board"></div>
+</main>
+
+<script src="app.js"></script>
+<script>
+let datos = cargar();
+const COLUMNAS = CONFIG.columnasKanban.map(c => c.id);
+
+function pintarColumnas(){
+  document.getElementById('kanban-board').innerHTML = CONFIG.columnasKanban.map(c => `
+    <div class="kanban-col">
+      <div class="kanban-header">
+        <span>${c.label}</span>
+        <span class="kanban-count" data-count="${c.id}">0</span>
+      </div>
+      <div class="kanban-list" data-drop="${c.id}"></div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('form-tarea').addEventListener('submit', e => {
+  e.preventDefault();
+  const input = document.getElementById('k-texto');
+  const texto = input.value.trim();
+  if(!texto) return;
+  datos.tablero.push({ id: uid(), texto, columna: document.getElementById('k-columna').value });
+  guardar(datos);
+  input.value = '';
+  render();
+});
+
+function render(){
+  COLUMNAS.forEach(col => {
+    const list = document.querySelector(`[data-drop="${col}"]`);
+    const count = document.querySelector(`[data-count="${col}"]`);
+    if(!list) return;
+    const items = datos.tablero.filter(t => t.columna === col);
+    count.textContent = items.length;
+    if(!items.length){ list.innerHTML = '<p class="kanban-vacio">Sin tareas</p>'; return; }
+    list.innerHTML = items.map(t => `
+      <div class="kanban-item" draggable="true" data-id="${t.id}">
+        <span class="texto">${esc(t.texto)}</span>
+        <select class="kanban-move" data-move="${t.id}">
+          ${CONFIG.columnasKanban.map(c =>
+            `<option value="${c.id}" ${t.columna === c.id ? 'selected' : ''}>${c.label.split(' ')[0]}</option>`
+          ).join('')}
+        </select>
+        <button class="kanban-btn" data-edit="${t.id}">✎</button>
+        <button class="kanban-btn del" data-del="${t.id}">✕</button>
+      </div>`).join('');
+    list.querySelectorAll('.kanban-item').forEach(item => {
+      item.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', item.dataset.id);
+        item.classList.add('dragging');
+      });
+      item.addEventListener('dragend', () => item.classList.remove('dragging'));
+    });
+    list.querySelectorAll('[data-move]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const t = datos.tablero.find(x => x.id === sel.dataset.move);
+        if(!t) return;
+        t.columna = sel.value; guardar(datos); render();
+      });
+    });
+    list.querySelectorAll('[data-edit]').forEach(b => {
+      b.addEventListener('click', e => {
+        e.stopPropagation();
+        const t = datos.tablero.find(x => x.id === b.dataset.edit);
+        if(!t) return;
+        const n = prompt('Editar:', t.texto);
+        if(n === null || !n.trim()) return;
+        t.texto = n.trim(); guardar(datos); render();
+      });
+    });
+    list.querySelectorAll('[data-del]').forEach(b => {
+      b.addEventListener('click', e => {
+        e.stopPropagation();
+        if(!confirm('¿Eliminar?')) return;
+        datos.tablero = datos.tablero.filter(x => x.id !== b.dataset.del);
+        guardar(datos); render();
+      });
+    });
+  });
+}
+
+function setupDrop(){
+  COLUMNAS.forEach(col => {
+    const list = document.querySelector(`[data-drop="${col}"]`);
+    if(!list) return;
+    list.addEventListener('dragenter', e => { e.preventDefault(); list.classList.add('drag-over'); });
+    list.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    list.addEventListener('dragleave', () => list.classList.remove('drag-over'));
+    list.addEventListener('drop', e => {
+      e.preventDefault();
+      list.classList.remove('drag-over');
+      const id = e.dataTransfer.getData('text/plain');
+      const t = datos.tablero.find(x => x.id === id);
+      if(!t) return;
+      t.columna = col;
+      guardar(datos); render();
+    });
+  });
+}
+
+pintarColumnas();
+setupDrop();
+document.body.insertAdjacentHTML('beforeend', bottomNavHTML('tablero'));
+mountBackupBar(document.querySelector('.contenedor'), () => location.reload());
+render();
+</script>
+</body>
+</html>

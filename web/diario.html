@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diario</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="contenedor">
+  <div class="panel-head">
+    <h1>Diario</h1>
+    <div class="tag">Registro de días</div>
+  </div>
+
+  <div class="block">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Nueva entrada</h2>
+    </div>
+    <div class="grid-2">
+      <div class="narrow">
+        <label for="d-fecha">Fecha</label>
+        <input type="date" id="d-fecha">
+      </div>
+      <div>
+        <label for="d-titulo">Título</label>
+        <input type="text" id="d-titulo" placeholder="¿Qué ha pasado hoy?">
+      </div>
+    </div>
+    <label for="d-texto">Contenido</label>
+    <textarea id="d-texto" placeholder="Escribe libremente..."></textarea>
+    <div style="margin-top:12px;text-align:right">
+      <button class="btn green" id="d-guardar">Guardar entrada</button>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Entradas</h2>
+    </div>
+    <div id="lista-diario"></div>
+  </div>
+</main>
+
+<script src="app.js"></script>
+<script>
+let datos = cargar();
+document.getElementById('d-fecha').value = hoy();
+
+document.getElementById('d-guardar').addEventListener('click', () => {
+  const fecha = document.getElementById('d-fecha').value || hoy();
+  const titulo = document.getElementById('d-titulo').value.trim();
+  const texto = document.getElementById('d-texto').value.trim();
+  if(!titulo && !texto){ alert('Escribe algo.'); return; }
+  datos.diario.push({ id: uid(), fecha, titulo: titulo || '(Sin título)', texto });
+  guardar(datos);
+  document.getElementById('d-titulo').value = '';
+  document.getElementById('d-texto').value = '';
+  render();
+});
+
+function render(){
+  const $l = document.getElementById('lista-diario');
+  const lista = [...datos.diario].sort((a,b) => b.fecha.localeCompare(a.fecha) || b.id.localeCompare(a.id));
+  if(!lista.length){ $l.innerHTML = '<p class="vacio">Sin entradas todavía.</p>'; return; }
+  $l.innerHTML = lista.map(e => `
+    <div class="entrada">
+      <div class="entrada-head">
+        <span class="fecha">${fechaBonita(e.fecha)}</span>
+        <button class="btn danger" data-borrar="${e.id}">Eliminar</button>
+      </div>
+      <h3>${esc(e.titulo)}</h3>
+      <p>${esc(e.texto)}</p>
+    </div>`).join('');
+  $l.querySelectorAll('[data-borrar]').forEach(b => {
+    b.addEventListener('click', () => {
+      if(!confirm('¿Eliminar?')) return;
+      datos.diario = datos.diario.filter(x => x.id !== b.dataset.borrar);
+      guardar(datos); render();
+    });
+  });
+}
+
+document.body.insertAdjacentHTML('beforeend', bottomNavHTML('diario'));
+mountBackupBar(document.querySelector('.contenedor'), () => location.reload());
+render();
+</script>
+</body>
+</html>
