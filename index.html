@@ -6,7 +6,7 @@
 <title>Acceso · Mi Organización</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-  /* Estilos específicos para que el login quede centrado y bonito */
+  /* Estilos específicos para que el login quede centrado */
   .login-container {
     max-width: 400px;
     margin: 15vh auto;
@@ -31,53 +31,57 @@
 
   <div class="login-box">
     <label for="email">Correo electrónico</label>
-    <input type="email" id="email" placeholder="tu@correo.com">
+    <input type="email" id="email" placeholder="tu@correo.com" autocomplete="username">
     
     <label for="password">Contraseña</label>
-    <input type="password" id="password" placeholder="********">
+    <input type="password" id="password" placeholder="********" autocomplete="current-password">
     
     <button class="btn green" id="btn-login">Entrar</button>
-    <button class="btn ghost" id="btn-register">Crear cuenta nueva</button>
   </div>
 </div>
 
+<!-- CDN de Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Nuestro archivo con la lógica y credenciales -->
 <script src="app.js"></script>
+
 <script>
-  // Si ya hay una sesión activa, saltamos directo a Hábitos
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  // 1. Verificar si ya hay sesión activa al entrar a la página
+  supabaseClient.auth.getSession().then(({ data: { session } }) => {
     if (session) {
+      window.location.href = 'habitos.html'; // Si ya está logueado, a Hábitos
+    }
+  });
+
+  // 2. Lógica del botón Entrar
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('btn-login');
+    
+    if(!email || !password) return alert('Por favor, rellena todos los campos.');
+    
+    btn.innerText = 'Entrando...';
+    btn.disabled = true;
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    
+    btn.innerText = 'Entrar';
+    btn.disabled = false;
+
+    if(error) {
+      console.error(error);
+      alert('Error: Correo o contraseña incorrectos.');
+    } else {
+      // Éxito: Redirigimos a Hábitos
       window.location.href = 'habitos.html';
     }
   });
 
-  // Lógica de Iniciar Sesión
-  document.getElementById('btn-login').addEventListener('click', async () => {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    if(!email || !password) return alert('Rellena todos los campos');
-    
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if(error) {
-      alert('Error al entrar: ' + error.message);
-    } else {
-      window.location.href = 'habitos.html'; // Al entrar, vamos a Hábitos
-    }
-  });
-
-  // Lógica de Registro
-  document.getElementById('btn-register').addEventListener('click', async () => {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    if(!email || !password) return alert('Rellena todos los campos');
-    
-    const { error } = await supabase.auth.signUp({ email, password });
-    if(error) {
-      alert('Error al registrar: ' + error.message);
-    } else {
-      alert('Cuenta creada con éxito. Pulsa "Entrar" para acceder.');
+  // 3. Permitir pulsar 'Enter' en el teclado para iniciar sesión
+  document.getElementById('password').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+      document.getElementById('btn-login').click();
     }
   });
 </script>
