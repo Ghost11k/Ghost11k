@@ -48,13 +48,22 @@
 
   // 1. ARRANQUE Y SEGURIDAD
   async function init(){
+    // 1.1 Insertar menú inferior inmediatamente para que no parpadee
+    document.body.insertAdjacentHTML('beforeend', bottomNavHTML('habitos'));
+
+    // 1.2 Comprobar sesión
     const session = await checkUser();
+    
     if(session) {
       usuarioId = session.user.id;
       await cargarHabitos();
-      document.getElementById('loader').style.display = 'none'; // Ocultar carga
-      document.body.insertAdjacentHTML('beforeend', bottomNavHTML('habitos'));
+    } else {
+      // Si no hay sesión, checkUser ya te habrá redirigido al login.
+      return; 
     }
+    
+    // 1.3 Ocultar pantalla de carga
+    document.getElementById('loader').style.display = 'none';
   }
 
   // 2. CARGAR DATOS DE SUPABASE
@@ -66,33 +75,48 @@
 
     if(error) {
       console.error('Error al cargar:', error);
-      alert('Error al cargar los hábitos.');
+      alert('Error al cargar los hábitos: ' + error.message);
       return;
     }
-    datos.habitos = data;
+    datos.habitos = data || [];
     render();
   }
 
   // 3. AÑADIR HÁBITO A SUPABASE
   document.getElementById('form-habito').addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+    if(!usuarioId) {
+      alert("Error crítico: No se ha detectado tu sesión de usuario. Recarga la página e intenta entrar de nuevo.");
+      return;
+    }
+
     const input = document.getElementById('h-nombre');
     const nombre = input.value.trim();
     if(!nombre) return;
+
+    // Deshabilitar botón temporalmente para evitar doble clic
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+    btn.innerText = '...';
 
     const { error } = await supabaseClient
       .from('habitos')
       .insert([{ 
         nombre: nombre, 
-        dias: {},
+        dias: {}, 
         user_id: usuarioId 
       }]);
 
+    btn.disabled = false;
+    btn.innerText = 'Añadir';
+
     if(error) {
+      console.error("Error de Supabase al insertar:", error);
       alert('Error al guardar: ' + error.message);
     } else {
       input.value = '';
-      await cargarHabitos(); // Recargar la lista
+      await cargarHabitos(); // Recargar la lista desde la nube
     }
   });
 
@@ -101,8 +125,12 @@
     let n = 0;
     const d = new Date();
     // Si hoy no está marcado, empezamos a contar desde ayer
-    if(!h.dias[iso(d)]) d.setDate(d.getDate() - 1);
-    while(h.dias[iso(d)]){ n++; d.setDate(d.getDate() - 1); }
+    if(!h.dias || !h.dias[iso(d)]) d.setDate(d.getDate() - 1);
+    
+    while(h.dias && h.dias[iso(d)]){ 
+      n++; 
+      d.setDate(d.getDate() - 1); 
+    }
     return n;
   }
 
@@ -119,9 +147,12 @@
     }
 
     $l.innerHTML = datos.habitos.map(h => {
+      // Aseguramos que 'h.dias' existe
+      const diasHabito = h.dias || {};
+
       const celdas = dias.map(d => {
         const f = iso(d);
-        const hecho = !!h.dias[f];
+        const hecho = !!diasHabito[f];
         const esHoy = f === hoy();
         return `<button class="dia ${hecho ? 'hecho' : ''} ${esHoy ? 'hoy' : ''}"
                   data-habito="${h.id}" data-fecha="${f}" title="${fechaBonita(f)}">
@@ -145,7 +176,7 @@
         if(!h) return;
         
         const f = b.dataset.fecha;
-        const nuevosDias = { ...h.dias }; // Copiamos el objeto
+        const nuevosDias = { ...(h.dias || {}) }; // Copiamos el objeto o creamos uno nuevo
         
         if(nuevosDias[f]) delete nuevosDias[f]; 
         else nuevosDias[f] = true;
@@ -157,7 +188,7 @@
           .eq('id', h.id);
 
         if(error) {
-          alert('Error al actualizar');
+          alert('Error al actualizar: ' + error.message);
         } else {
           h.dias = nuevosDias; // Actualizar en memoria
           render(); // Volver a pintar
@@ -175,12 +206,13 @@
           .delete()
           .eq('id', b.dataset.del);
 
-        if(error) alert('Error al borrar');
+        if(error) alert('Error al borrar: ' + error.message);
         else await cargarHabitos();
       });
     });
   }
 
+  // Iniciar todo
   init();
 </script>
 </body>
