@@ -46,6 +46,33 @@
     if(error) alert('Error al registrar: ' + error.message);
     else alert('Cuenta creada. Ya puedes entrar (si desactivaste la confirmación de email, entra directamente).');
   });
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+  // Solo comprobamos el usuario si estamos en la página de login
+  checkUser().catch(console.error);
+
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    if(!email || !password) return alert('Rellena correo y contraseña');
+    
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if(error) alert('Error al entrar: ' + error.message);
+    else window.location.href = 'index.html';
+  });
+
+  document.getElementById('btn-register').addEventListener('click', async () => {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    if(!email || !password) return alert('Rellena correo y contraseña');
+    
+    const { error } = await supabase.auth.signUp({ email, password });
+    if(error) alert('Error al registrar: ' + error.message);
+    else alert('Cuenta creada. Ya puedes entrar.');
+  });
 </script>
 </body>
 </html>
