@@ -12,7 +12,9 @@ const CONFIG = {
 // 2. CREDENCIALES
 const SUPABASE_URL = 'https://bifqmpixcempiambmlft.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_bJxzX3aevjW4Hl_Zcd8Jqg_tSa-q0uZ';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Inicializamos con un nombre distinto para evitar el error de "ya declarado"
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 3. UTILIDADES
 const DIAS_ES_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -47,27 +49,34 @@ function formatWeekRange(monday){
 
 // 4. SEGURIDAD (CheckUser)
 async function checkUser(){
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  if(!session){
-    // Si no hay sesión, lo mandamos al index (que es el login)
-    if(!window.location.pathname.endsWith('index.html') && window.location.pathname !== '/' && !window.location.pathname.endsWith('/Ghost11k/') && !window.location.pathname.endsWith('/web/')){
-      window.location.href = 'index.html';
+  try {
+    const { data: { session }, error } = await supabaseClient.auth.getSession();
+    if(error) throw error;
+    
+    if(!session){
+      // Si no hay sesión, redirigimos al index (el login)
+      const path = window.location.pathname;
+      if(!path.endsWith('index.html') && path !== '/' && !path.endsWith('/Ghost11k/') && !path.endsWith('/web/')){
+        window.location.href = 'index.html';
+      }
     }
+    return session;
+  } catch (e) {
+    console.error("Error en checkUser:", e);
+    return null;
   }
-  return session;
 }
 
 async function logout(){
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   window.location.href = 'index.html';
 }
 
-// 5. MENÚ INFERIOR ACTUALIZADO
+// 5. MENÚ INFERIOR
 function bottomNavHTML(active){
   const tabs = [
     { id: 'habitos', label: 'Hábitos', href: 'habitos.html' },
-    { id: 'plan', label: 'Plan', href: 'plan.html' }, // Ahora se llama plan.html
+    { id: 'plan', label: 'Plan', href: 'plan.html' },
     { id: 'diario', label: 'Diario', href: 'diario.html' },
     { id: 'tablero', label: 'Tablero', href: 'tablero.html' }
   ];
