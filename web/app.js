@@ -1,3 +1,4 @@
+// 1. CONFIGURACIÓN Y CREDENCIALES
 const CONFIG = {
   diasHabitos: 14,
   columnasKanban: [
@@ -5,43 +6,20 @@ const CONFIG = {
     { id: 'manana', label: '🌅 Mañana' },
     { id: 'semana', label: '📅 Esta semana' },
     { id: 'proxima', label: '➡️ Próxima semana' }
-  ],
-  claveStorage: 'mi-organizacion-v2'
+  ]
 };
 
+// CREDENCIALES CONFIGURADAS
+const SUPABASE_URL = 'https://bifqmpixcempiambmlft.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_bJxzX3aevjW4Hl_Zcd8Jqg_tSa-q0uZ';
+
+// Inicializamos el cliente de Supabase
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 2. UTILIDADES
 const DIAS_ES_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const LETRAS_DIA = ['D','L','M','X','J','V','S'];
 const NOMBRES_MES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-function defaultData(){
-  return {
-    diario: [],
-    habitos: [],
-    tablero: [],
-    plan: { vision: '', objetivos: [] },
-    semana: []
-  };
-}
-
-function cargar(){
-  try{
-    const raw = localStorage.getItem(CONFIG.claveStorage);
-    if(!raw) return defaultData();
-    const p = JSON.parse(raw);
-    return {
-      diario: p.diario || [],
-      habitos: p.habitos || [],
-      tablero: p.tablero || [],
-      plan: p.plan || { vision: '', objetivos: [] },
-      semana: p.semana || []
-    };
-  }catch(e){ return defaultData(); }
-}
-
-function guardar(d){
-  try{ localStorage.setItem(CONFIG.claveStorage, JSON.stringify(d)); }
-  catch(e){ alert('No se pudo guardar.'); }
-}
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function iso(d){ d = new Date(d); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -69,6 +47,32 @@ function formatWeekRange(monday){
   return `${monday.getDate()} ${m1} – ${friday.getDate()} ${m2}`;
 }
 
+// 3. LÓGICA DE AUTENTICACIÓN (LOGIN)
+async function checkUser(){
+  const { data: { session } } = await supabase.auth.getSession();
+  if(!session){
+    // Si no hay sesión, redirigir al login (a menos que ya estemos en el login)
+    if(!window.location.pathname.includes('login.html') && !window.location.pathname.includes('index.html') === false){
+      // Nota: La condición anterior es para evitar bucles, pero lo hacemos más simple abajo.
+    }
+    if(!window.location.pathname.includes('login.html')){
+      window.location.href = 'login.html';
+    }
+  } else {
+    // Si ya está logueado y está en el login, mandarlo al inicio
+    if(window.location.pathname.includes('login.html')){
+      window.location.href = 'index.html';
+    }
+  }
+  return session;
+}
+
+async function logout(){
+  await supabase.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// 4. NAVEGACIÓN INFERIOR
 function bottomNavHTML(active){
   const tabs = [
     { id: 'plan', label: 'Plan', href: 'index.html' },
@@ -76,51 +80,15 @@ function bottomNavHTML(active){
     { id: 'habitos', label: 'Hábitos', href: 'habitos.html' },
     { id: 'tablero', label: 'Tablero', href: 'tablero.html' }
   ];
-  return `<nav class="bottom-nav">${tabs.map((t, i) => `
-    <a href="${t.href}" class="${active === t.id ? 'activo' : ''}">
-      <span class="tab-num">0${i+1}</span>
-      <span class="tab-label">${t.label}</span>
+  return `<nav class="bottom-nav">
+    ${tabs.map((t, i) => `
+      <a href="${t.href}" class="${active === t.id ? 'activo' : ''}">
+        <span class="tab-num">0${i+1}</span>
+        <span class="tab-label">${t.label}</span>
+      </a>
+    `).join('')}
+    <a href="#" onclick="logout()" style="background:#a8563c; color:white;">
+      <span class="tab-num">SALIR</span>
     </a>
-  `).join('')}</nav>`;
-}
-
-function mountBackupBar(container, onImport){
-  if(!container) return;
-  container.insertAdjacentHTML('beforeend', `
-    <div class="backup-bar">
-      <p class="note">Los datos viven solo en este navegador. Exporta regularmente.</p>
-      <button class="btn ghost" id="exportar">⬇ Exportar</button>
-      <button class="btn ghost" id="importar-btn">⬆ Importar</button>
-      <input type="file" id="importar" accept="application/json" hidden>
-    </div>
-  `);
-  document.getElementById('exportar').addEventListener('click', () => {
-    const d = cargar();
-    const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'backup-' + hoy() + '.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
-  document.getElementById('importar-btn').addEventListener('click', () => {
-    document.getElementById('importar').click();
-  });
-  document.getElementById('importar').addEventListener('change', ev => {
-    const f = ev.target.files[0];
-    if(!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      try{
-        const n = JSON.parse(r.result);
-        if(!confirm('Esto reemplaza todos los datos. ¿Continuar?')) return;
-        const merged = Object.assign(defaultData(), n);
-        guardar(merged);
-        if(onImport) onImport(merged);
-        else location.reload();
-      }catch(e){ alert('Archivo inválido.'); }
-    };
-    r.readAsText(f);
-    ev.target.value = '';
-  });
+  </nav>`;
 }
