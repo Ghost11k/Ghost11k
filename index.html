@@ -6,7 +6,7 @@
 <title>Plan · Semana</title>
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body style="visibility: hidden;">
 <main class="contenedor">
   <nav class="breadcrumb" id="breadcrumb"></nav>
 
@@ -361,6 +361,19 @@ document.body.insertAdjacentHTML('beforeend', bottomNavHTML('plan'));
 mountBackupBar(document.querySelector('.contenedor'), () => location.reload());
 renderBreadcrumb('week');
 renderWeek();
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+  // Verificamos el usuario
+  checkUser().then((session) => {
+    if (session) {
+      // Si hay sesión, mostramos la página y cargamos los datos
+      document.body.style.visibility = 'visible';
+      renderBreadcrumb('week');
+      renderWeek();
+    }
+    // Si no hay sesión, checkUser() ya te habrá redirigido a login.html automáticamente
+  });
 </script>
 </body>
 </html>
