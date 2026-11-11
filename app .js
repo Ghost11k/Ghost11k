@@ -13,8 +13,8 @@ const CONFIG = {
 const SUPABASE_URL = 'https://bifqmpixcempiambmlft.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_bJxzX3aevjW4Hl_Zcd8Jqg_tSa-q0uZ';
 
-// Inicializamos el cliente de Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Inicializamos el cliente (Usando window.supabase para evitar el error de variable)
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 2. UTILIDADES
 const DIAS_ES_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -49,22 +49,24 @@ function formatWeekRange(monday){
 
 // 3. LÓGICA DE AUTENTICACIÓN (LOGIN)
 async function checkUser(){
-  const { data: { session } } = await supabase.auth.getSession();
-  if(!session){
-    // Si no hay sesión, redirigir al login (a menos que ya estemos en el login)
-    if(!window.location.pathname.includes('login.html') && !window.location.pathname.includes('index.html') === false){
-      // Nota: La condición anterior es para evitar bucles, pero lo hacemos más simple abajo.
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if(error) throw error;
+    
+    if(!session){
+      if(!window.location.pathname.includes('login.html')){
+        window.location.href = 'login.html';
+      }
+    } else {
+      if(window.location.pathname.includes('login.html')){
+        window.location.href = 'index.html';
+      }
     }
-    if(!window.location.pathname.includes('login.html')){
-      window.location.href = 'login.html';
-    }
-  } else {
-    // Si ya está logueado y está en el login, mandarlo al inicio
-    if(window.location.pathname.includes('login.html')){
-      window.location.href = 'index.html';
-    }
+    return session;
+  } catch(e) {
+    console.error("Error comprobando sesión:", e);
+    return null;
   }
-  return session;
 }
 
 async function logout(){
