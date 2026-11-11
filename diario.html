@@ -1,82 +1,309 @@
-<!-- ... (todo tu HTML de diario se mantiene igual hasta el final) ... -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diario y Personal</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Estilos para las pestañas internas del diario */
+  .sub-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+  }
+  .sub-tabs button {
+    background: var(--bg);
+    color: var(--muted);
+    border: 2px solid var(--line);
+    padding: 10px 15px;
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .sub-tabs button.activo {
+    background: var(--green);
+    color: var(--bg);
+    border-color: var(--green);
+  }
+  .seccion-oculta { display: none; }
+  
+  /* Colores para las categorías de Personal */
+  .tag-libro { color: #4a8a2a; border-color: #4a8a2a; }
+  .tag-peli { color: #2a5a8a; border-color: #2a5a8a; }
+  .tag-compra { color: #a8563c; border-color: #a8563c; }
+</style>
+</head>
+<body>
+
+<div id="loader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#ede8dc; z-index:9999; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:bold; color:#2a2825;">
+  Cargando...
+</div>
+
+<main class="contenedor">
+  <div class="panel-head">
+    <h1>Diario</h1>
+    <div class="tag">Reflexiones, notas y personal</div>
+  </div>
+
+  <!-- PESTAÑAS -->
+  <div class="sub-tabs">
+    <button class="activo" data-target="sec-diario">📔 Reflexiones</button>
+    <button data-target="sec-notas">⚡ Notas Rápidas</button>
+    <button data-target="sec-personal">🎬 Personal</button>
+  </div>
+
+  <!-- ================= SECCIÓN 1: DIARIO ================= -->
+  <div id="sec-diario" class="seccion-contenido">
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Nueva reflexión</h2>
+      </div>
+      <div class="grid-2">
+        <div class="narrow">
+          <label>Fecha</label>
+          <input type="date" id="d-fecha">
+        </div>
+        <div>
+          <label>Título (opcional)</label>
+          <input type="text" id="d-titulo" placeholder="Un buen día...">
+        </div>
+      </div>
+      <label>¿Qué ha pasado hoy?</label>
+      <textarea id="d-texto" placeholder="Escribe aquí tus pensamientos..."></textarea>
+      <div style="margin-top:12px;text-align:right">
+        <button class="btn green" id="btn-save-diario">Guardar Reflexión</button>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Entradas anteriores</h2>
+      </div>
+      <div id="lista-diario"></div>
+    </div>
+  </div>
+
+  <!-- ================= SECCIÓN 2: NOTAS RÁPIDAS ================= -->
+  <div id="sec-notas" class="seccion-contenido seccion-oculta">
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Añadir nota rápida</h2>
+      </div>
+      <form class="add-form" id="form-notas">
+        <input type="text" id="n-texto" placeholder="Ej: Comprar pilas, llamar a Juan...">
+        <button class="btn green" type="submit">Añadir</button>
+      </form>
+    </div>
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Mis notas</h2>
+      </div>
+      <div id="lista-notas" class="lista"></div>
+    </div>
+  </div>
+
+  <!-- ================= SECCIÓN 3: PERSONAL ================= -->
+  <div id="sec-personal" class="seccion-contenido seccion-oculta">
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Añadir a mi lista</h2>
+      </div>
+      <form class="add-form" id="form-personal">
+        <select id="p-categoria" style="max-width:120px">
+          <option value="Libro">📚 Libro</option>
+          <option value="Película">🎬 Película</option>
+          <option value="Compra">🛒 Compra</option>
+        </select>
+        <input type="text" id="p-titulo" placeholder="Título o nombre del artículo">
+        <input type="text" id="p-desc" placeholder="Detalles (autor, dónde comprarlo...)">
+        <button class="btn green" type="submit">Añadir</button>
+      </form>
+    </div>
+    
+    <div class="block">
+      <div class="section-head">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Mi lista personal</h2>
+      </div>
+      <div id="lista-personal" class="lista"></div>
+    </div>
+  </div>
+
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
-  let datos = { diario: [] };
   let usuarioId = null;
 
+  // 1. INICIALIZACIÓN Y SEGURIDAD
   async function init(){
+    document.body.insertAdjacentHTML('beforeend', bottomNavHTML('diario'));
+    
+    // Configurar pestañas
+    document.querySelectorAll('.sub-tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.sub-tabs button').forEach(b => b.classList.remove('activo'));
+        document.querySelectorAll('.seccion-contenido').forEach(s => s.classList.add('seccion-oculta'));
+        btn.classList.add('activo');
+        document.getElementById(btn.dataset.target).classList.remove('seccion-oculta');
+      });
+    });
+
     const session = await checkUser();
     if(session) {
       usuarioId = session.user.id;
-      await cargarDiario();
-      document.body.insertAdjacentHTML('beforeend', bottomNavHTML('diario'));
+      document.getElementById('d-fecha').value = hoy();
+      await cargarTodo();
     }
+    document.getElementById('loader').style.display = 'none';
   }
 
+  async function cargarTodo(){
+    await Promise.all([cargarDiario(), cargarNotas(), cargarPersonal()]);
+  }
+
+  /* ==========================================
+     LÓGICA DEL DIARIO
+     ========================================== */
   async function cargarDiario(){
-    // 1. Pedir los datos a Supabase
-    const { data, error } = await supabase
-      .from('diario')
-      .select('*')
-      .order('fecha', { ascending: false });
-
-    if(error) {
-      console.error('Error al cargar:', error);
-      return;
-    }
-    datos.diario = data;
-    render();
-  }
-
-  document.getElementById('d-guardar').addEventListener('click', async () => {
-    const fecha = document.getElementById('d-fecha').value || hoy();
-    const titulo = document.getElementById('d-titulo').value.trim();
-    const texto = document.getElementById('d-texto').value.trim();
+    const { data, error } = await supabaseClient.from('diario').select('*').order('fecha', { ascending: false });
+    if(error) return console.error(error);
     
-    if(!titulo && !texto){ alert('Escribe algo.'); return; }
-
-    // 2. Guardar en Supabase
-    const { error } = await supabase
-      .from('diario')
-      .insert([{ 
-        fecha: fecha, 
-        titulo: titulo || '(Sin título)', 
-        texto: texto,
-        user_id: usuarioId 
-      }]);
-
-    if(error) {
-      alert('Error al guardar: ' + error.message);
-    } else {
-      document.getElementById('d-titulo').value = '';
-      document.getElementById('d-texto').value = '';
-      await cargarDiario(); // Recargar la lista
-    }
-  });
-
-  function render(){
     const $l = document.getElementById('lista-diario');
-    if(!datos.diario.length){ $l.innerHTML = '<p class="vacio">Sin entradas todavía.</p>'; return; }
-    
-    $l.innerHTML = datos.diario.map(e => `
+    if(!data.length) { $l.innerHTML = '<p class="vacio">Sin reflexiones aún.</p>'; return; }
+
+    $l.innerHTML = data.map(e => `
       <div class="entrada">
         <div class="entrada-head">
           <span class="fecha">${fechaBonita(e.fecha)}</span>
-          <button class="btn danger" onclick="borrarEntrada(${e.id})">Eliminar</button>
+          <button class="btn danger" onclick="borrar('diario', ${e.id})">Eliminar</button>
         </div>
-        <h3>${esc(e.titulo)}</h3>
+        ${e.titulo ? `<h3>${esc(e.titulo)}</h3>` : ''}
         <p>${esc(e.texto)}</p>
-      </div>`).join('');
+      </div>
+    `).join('');
   }
 
-  // 3. Borrar de Supabase
-  window.borrarEntrada = async (id) => {
-    if(!confirm('¿Eliminar?')) return;
-    const { error } = await supabase.from('diario').delete().eq('id', id);
-    if(error) alert('Error al borrar');
-    else await cargarDiario();
+  document.getElementById('btn-save-diario').addEventListener('click', async () => {
+    const fecha = document.getElementById('d-fecha').value || hoy();
+    const titulo = document.getElementById('d-titulo').value.trim();
+    const texto = document.getElementById('d-texto').value.trim();
+    if(!texto) return alert('Escribe algo en la reflexión.');
+
+    const { error } = await supabaseClient.from('diario').insert([{ fecha, titulo, texto, user_id: usuarioId }]);
+    if(error) alert(error.message);
+    else {
+      document.getElementById('d-titulo').value = '';
+      document.getElementById('d-texto').value = '';
+      await cargarDiario();
+    }
+  });
+
+  /* ==========================================
+     LÓGICA DE NOTAS RÁPIDAS
+     ========================================== */
+  async function cargarNotas(){
+    const { data, error } = await supabaseClient.from('notas').select('*').order('created_at', { ascending: false });
+    if(error) return console.error(error);
+
+    const $l = document.getElementById('lista-notas');
+    if(!data.length) { $l.innerHTML = '<p class="vacio">No hay notas rápidas.</p>'; return; }
+
+    $l.innerHTML = data.map(n => `
+      <div class="obj">
+        <div class="obj-head">
+          <div style="flex:1"><h3>${esc(n.texto)}</h3></div>
+          <button class="btn danger" onclick="borrar('notas', ${n.id})">✕</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('form-notas').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('n-texto');
+    const texto = input.value.trim();
+    if(!texto) return;
+    
+    const { error } = await supabaseClient.from('notas').insert([{ texto, user_id: usuarioId }]);
+    if(error) alert(error.message);
+    else { input.value = ''; await cargarNotas(); }
+  });
+
+  /* ==========================================
+     LÓGICA DE PERSONAL (Libros, Pelis, Compras)
+     ========================================== */
+  async function cargarPersonal(){
+    const { data, error } = await supabaseClient.from('personal').select('*').order('created_at', { ascending: false });
+    if(error) return console.error(error);
+
+    const $l = document.getElementById('lista-personal');
+    if(!data.length) { $l.innerHTML = '<p class="vacio">Tu lista personal está vacía.</p>'; return; }
+
+    $l.innerHTML = data.map(p => {
+      let claseTag = p.categoria === 'Libro' ? 'tag-libro' : p.categoria === 'Película' ? 'tag-peli' : 'tag-compra';
+      return `
+      <div class="obj ${p.completado ? 'hecho' : ''}">
+        <div class="obj-head">
+          <div style="flex:1">
+            <span class="tag ${claseTag}" style="font-size:10px; font-weight:bold; padding:2px 5px; border:1px solid; margin-bottom:5px; display:inline-block;">${p.categoria.toUpperCase()}</span>
+            <h3>${esc(p.titulo)}</h3>
+            ${p.descripcion ? `<p class="desc">${esc(p.descripcion)}</p>` : ''}
+          </div>
+          <div style="display:flex; gap:5px;">
+            <button class="btn ${p.completado ? 'green' : 'ghost'}" onclick="togglePersonal(${p.id}, ${p.completado})" title="Marcar como completado">✓</button>
+            <button class="btn danger" onclick="borrar('personal', ${p.id})">✕</button>
+          </div>
+        </div>
+      </div>
+    `}).join('');
+  }
+
+  document.getElementById('form-personal').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const categoria = document.getElementById('p-categoria').value;
+    const titulo = document.getElementById('p-titulo').value.trim();
+    const descripcion = document.getElementById('p-desc').value.trim();
+    if(!titulo) return;
+
+    const { error } = await supabaseClient.from('personal').insert([{ categoria, titulo, descripcion, user_id: usuarioId }]);
+    if(error) alert(error.message);
+    else {
+      document.getElementById('p-titulo').value = '';
+      document.getElementById('p-desc').value = '';
+      await cargarPersonal();
+    }
+  });
+
+  window.togglePersonal = async (id, estadoActual) => {
+    await supabaseClient.from('personal').update({ completado: !estadoActual }).eq('id', id);
+    await cargarPersonal();
+  };
+
+  /* ==========================================
+     BORRAR GENÉRICO (Para las 3 secciones)
+     ========================================== */
+  window.borrar = async (tabla, id) => {
+    if(!confirm('¿Eliminar este elemento?')) return;
+    const { error } = await supabaseClient.from(tabla).delete().eq('id', id);
+    if(error) alert(error.message);
+    else {
+      if(tabla === 'diario') cargarDiario();
+      if(tabla === 'notas') cargarNotas();
+      if(tabla === 'personal') cargarPersonal();
+    }
   };
 
   init();
