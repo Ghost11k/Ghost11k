@@ -6,10 +6,17 @@
 <title>Plan · Semana</title>
 <link rel="stylesheet" href="styles.css">
 </head>
-<body style="visibility: hidden;">
+<body>
+
+<!-- PANTALLA DE CARGA (evita que se vea el plan antes de pasar por el login) -->
+<div id="loader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#ede8dc; z-index:9999; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:bold; color:#2a2825;">
+  Cargando sistema...
+</div>
+
 <main class="contenedor">
   <nav class="breadcrumb" id="breadcrumb"></nav>
 
+  <!-- VISTA SEMANA (Inicial) -->
   <section class="view" id="view-week">
     <div class="panel-head">
       <h1>Semana</h1>
@@ -34,6 +41,7 @@
     </div>
   </section>
 
+  <!-- VISTA MES -->
   <section class="view hidden" id="view-month">
     <div class="panel-head">
       <h1>Mes</h1>
@@ -52,6 +60,7 @@
     </div>
   </section>
 
+  <!-- VISTA TRIMESTRE -->
   <section class="view hidden" id="view-quarter">
     <div class="panel-head">
       <h1>Trimestre</h1>
@@ -70,6 +79,7 @@
     </div>
   </section>
 
+  <!-- VISTA AÑO -->
   <section class="view hidden" id="view-year">
     <div class="panel-head">
       <h1>Año</h1>
@@ -99,281 +109,300 @@
   </section>
 </main>
 
-<script src="app.js"></script>
-<script>
-let datos = cargar();
-let selectedDate = new Date();
-
-function renderBreadcrumb(active){
-  const y = selectedDate.getFullYear();
-  const q = getQuarter(selectedDate);
-  const m = NOMBRES_MES[selectedDate.getMonth()];
-  const range = formatWeekRange(getMonday(selectedDate));
-  const items = [
-    { view: 'year', label: String(y) },
-    { view: 'quarter', label: `Q${q}` },
-    { view: 'month', label: m },
-    { view: 'week', label: `Sem ${range}` }
-  ];
-  const bc = document.getElementById('breadcrumb');
-  bc.innerHTML = items.map((it, i) => {
-    const sep = i < items.length - 1 ? '<span class="sep">›</span>' : '';
-    const cls = it.view === active ? 'activo' : '';
-    return `<a href="#" data-view="${it.view}" class="${cls}">${it.label}</a>${sep}`;
-  }).join('');
-  bc.querySelectorAll('a').forEach(a => {
-    a.addEventListener('click', e => {
-      e.preventDefault();
-      switchView(a.dataset.view);
-    });
-  });
-}
-
-function switchView(name){
-  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-  document.getElementById('view-' + name).classList.remove('hidden');
-  renderBreadcrumb(name);
-  if(name === 'week') renderWeek();
-  if(name === 'month') renderMonth();
-  if(name === 'quarter') renderQuarter();
-  if(name === 'year') renderYear();
-}
-
-function renderWeek(){
-  const monday = getMonday(selectedDate);
-  document.getElementById('week-range').textContent = formatWeekRange(monday);
-  const grid = document.getElementById('week-grid');
-  const days = [];
-  for(let i = 0; i < 5; i++) days.push(addDays(monday, i));
-
-  grid.innerHTML = days.map(d => {
-    const f = iso(d);
-    const tasks = datos.semana.filter(t => t.fecha === f);
-    const esHoy = f === hoy();
-    const tareasHTML = tasks.length
-      ? tasks.map(t => `
-          <div class="day-task ${t.hecho ? 'hecho' : ''}">
-            <input type="checkbox" ${t.hecho ? 'checked' : ''} data-toggle="${t.id}">
-            <span class="day-task-text">${esc(t.texto)}</span>
-            <button class="day-task-del" data-del="${t.id}">✕</button>
-          </div>`).join('')
-      : '';
-    return `
-      <div class="day-col ${esHoy ? 'hoy' : ''}">
-        <div class="day-header">
-          <span class="day-name">${DIAS_ES_CORTO[d.getDay()]}</span>
-          <span class="day-num">${d.getDate()}</span>
-        </div>
-        <div class="day-tasks">${tareasHTML}</div>
-        <button class="day-add" data-fecha="${f}">+ Añadir</button>
-      </div>`;
-  }).join('');
-
-  grid.querySelectorAll('.day-add').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const texto = prompt('Nueva tarea:');
-      if(!texto || !texto.trim()) return;
-      datos.semana.push({ id: uid(), fecha: btn.dataset.fecha, texto: texto.trim(), hecho: false });
-      guardar(datos); renderWeek();
-    });
-  });
-  grid.querySelectorAll('[data-toggle]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const t = datos.semana.find(x => x.id === cb.dataset.toggle);
-      if(!t) return;
-      t.hecho = cb.checked; guardar(datos); renderWeek();
-    });
-  });
-  grid.querySelectorAll('[data-del]').forEach(b => {
-    b.addEventListener('click', () => {
-      if(!confirm('¿Eliminar tarea?')) return;
-      datos.semana = datos.semana.filter(x => x.id !== b.dataset.del);
-      guardar(datos); renderWeek();
-    });
-  });
-
-  renderObjetivosSemana(monday);
-}
-
-function renderObjetivosSemana(monday){
-  const f = iso(monday);
-  const lista = document.getElementById('lista-week-obj');
-  const objs = datos.plan.objetivos.filter(o => o.nivel === 4 && o.fecha === f);
-  if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos para esta semana.</p>'; return; }
-  lista.innerHTML = objs.map(o => `
-    <div class="obj ${o.hecho ? 'hecho' : ''}">
-      <div class="obj-head">
-        <div style="flex:1"><h3>${o.hecho ? '✓ ' : ''}${esc(o.titulo)}</h3></div>
-        <button class="btn danger" data-del-obj="${o.id}">✕</button>
-      </div>
-      <button class="btn ${o.hecho ? 'green' : 'ghost'}" data-toggle-obj="${o.id}">
-        ${o.hecho ? 'Completado' : 'Marcar hecho'}
-      </button>
-    </div>`).join('');
-  lista.querySelectorAll('[data-del-obj]').forEach(b => {
-    b.addEventListener('click', () => {
-      if(!confirm('¿Eliminar?')) return;
-      datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.delObj);
-      guardar(datos); renderObjetivosSemana(monday);
-    });
-  });
-  lista.querySelectorAll('[data-toggle-obj]').forEach(b => {
-    b.addEventListener('click', () => {
-      const o = datos.plan.objetivos.find(x => x.id === b.dataset.toggleObj);
-      if(!o) return;
-      o.hecho = !o.hecho; guardar(datos); renderObjetivosSemana(monday);
-    });
-  });
-}
-
-function renderMonth(){
-  const y = selectedDate.getFullYear();
-  const m = selectedDate.getMonth() + 1;
-  const prefix = `${y}-${String(m).padStart(2,'0')}-`;
-  const lista = document.getElementById('lista-month-obj');
-  const objs = datos.plan.objetivos.filter(o => o.nivel === 3 && o.fecha.startsWith(prefix));
-  if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos para este mes.</p>'; return; }
-  lista.innerHTML = objs.map(o => `
-    <div class="obj">
-      <div class="obj-head">
-        <div style="flex:1"><h3>${esc(o.titulo)}</h3></div>
-        <button class="btn danger" data-del="${o.id}">✕</button>
-      </div>
-    </div>`).join('');
-  lista.querySelectorAll('[data-del]').forEach(b => {
-    b.addEventListener('click', () => {
-      if(!confirm('¿Eliminar?')) return;
-      datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.del);
-      guardar(datos); renderMonth();
-    });
-  });
-}
-
-function renderQuarter(){
-  const y = selectedDate.getFullYear();
-  const q = getQuarter(selectedDate);
-  const startMonth = (q - 1) * 3 + 1;
-  const endMonth = q * 3;
-  const lista = document.getElementById('lista-quarter-obj');
-  const objs = datos.plan.objetivos.filter(o => {
-    if(o.nivel !== 2) return false;
-    const [oy, om] = o.fecha.split('-').map(Number);
-    return oy === y && om >= startMonth && om <= endMonth;
-  });
-  if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos para este trimestre.</p>'; return; }
-  lista.innerHTML = objs.map(o => `
-    <div class="obj">
-      <div class="obj-head">
-        <div style="flex:1"><h3>${esc(o.titulo)}</h3></div>
-        <button class="btn danger" data-del="${o.id}">✕</button>
-      </div>
-    </div>`).join('');
-  lista.querySelectorAll('[data-del]').forEach(b => {
-    b.addEventListener('click', () => {
-      if(!confirm('¿Eliminar?')) return;
-      datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.del);
-      guardar(datos); renderQuarter();
-    });
-  });
-}
-
-function renderYear(){
-  document.getElementById('p-vision').value = datos.plan.vision || '';
-  const y = selectedDate.getFullYear();
-  const lista = document.getElementById('lista-year-obj');
-  const objs = datos.plan.objetivos.filter(o => o.nivel === 1 && o.fecha.startsWith(y + '-'));
-  if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos anuales.</p>'; return; }
-  lista.innerHTML = objs.map(o => `
-    <div class="obj">
-      <div class="obj-head">
-        <div style="flex:1"><h3>${esc(o.titulo)}</h3></div>
-        <button class="btn danger" data-del="${o.id}">✕</button>
-      </div>
-    </div>`).join('');
-  lista.querySelectorAll('[data-del]').forEach(b => {
-    b.addEventListener('click', () => {
-      if(!confirm('¿Eliminar?')) return;
-      datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.del);
-      guardar(datos); renderYear();
-    });
-  });
-}
-
-document.getElementById('week-prev').addEventListener('click', () => {
-  selectedDate = addDays(selectedDate, -7); renderBreadcrumb('week'); renderWeek();
-});
-document.getElementById('week-next').addEventListener('click', () => {
-  selectedDate = addDays(selectedDate, 7); renderBreadcrumb('week'); renderWeek();
-});
-
-document.getElementById('form-week-obj').addEventListener('submit', e => {
-  e.preventDefault();
-  const t = document.getElementById('wo-titulo').value.trim();
-  if(!t) return;
-  datos.plan.objetivos.push({ id: uid(), nivel: 4, fecha: iso(getMonday(selectedDate)), titulo: t, descripcion: '', hecho: false });
-  guardar(datos);
-  document.getElementById('wo-titulo').value = '';
-  renderWeek();
-});
-
-document.getElementById('form-month-obj').addEventListener('submit', e => {
-  e.preventDefault();
-  const t = document.getElementById('mo-titulo').value.trim();
-  if(!t) return;
-  const y = selectedDate.getFullYear();
-  const m = String(selectedDate.getMonth() + 1).padStart(2,'0');
-  datos.plan.objetivos.push({ id: uid(), nivel: 3, fecha: `${y}-${m}-01`, titulo: t, descripcion: '' });
-  guardar(datos);
-  document.getElementById('mo-titulo').value = '';
-  renderMonth();
-});
-
-document.getElementById('form-quarter-obj').addEventListener('submit', e => {
-  e.preventDefault();
-  const t = document.getElementById('qo-titulo').value.trim();
-  if(!t) return;
-  const y = selectedDate.getFullYear();
-  const q = getQuarter(selectedDate);
-  const startMonth = String((q - 1) * 3 + 1).padStart(2,'0');
-  datos.plan.objetivos.push({ id: uid(), nivel: 2, fecha: `${y}-${startMonth}-01`, titulo: t, descripcion: '' });
-  guardar(datos);
-  document.getElementById('qo-titulo').value = '';
-  renderQuarter();
-});
-
-document.getElementById('form-year-obj').addEventListener('submit', e => {
-  e.preventDefault();
-  const t = document.getElementById('yo-titulo').value.trim();
-  if(!t) return;
-  const y = selectedDate.getFullYear();
-  datos.plan.objetivos.push({ id: uid(), nivel: 1, fecha: `${y}-01-01`, titulo: t, descripcion: '' });
-  guardar(datos);
-  document.getElementById('yo-titulo').value = '';
-  renderYear();
-});
-
-document.getElementById('p-vision-save').addEventListener('click', () => {
-  datos.plan.vision = document.getElementById('p-vision').value;
-  guardar(datos); alert('Visión guardada.');
-});
-
-document.body.insertAdjacentHTML('beforeend', bottomNavHTML('plan'));
-mountBackupBar(document.querySelector('.contenedor'), () => location.reload());
-renderBreadcrumb('week');
-renderWeek();
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
-  // Verificamos el usuario
+  let datos = { plan: { vision: '', objetivos: [] }, semana: [] };
+  let selectedDate = new Date();
+
+  // ==========================================
+  // 1. COMPROBACIÓN DE SESIÓN (LOGIN)
+  // ==========================================
   checkUser().then((session) => {
     if (session) {
-      // Si hay sesión, mostramos la página y cargamos los datos
-      document.body.style.visibility = 'visible';
+      // Si hay sesión, ocultamos el "Cargando..." y mostramos la app
+      document.getElementById('loader').style.display = 'none';
       renderBreadcrumb('week');
       renderWeek();
     }
-    // Si no hay sesión, checkUser() ya te habrá redirigido a login.html automáticamente
+    // Si no hay sesión, checkUser() ya te habrá redirigido a login.html
+  }).catch((error) => {
+    console.error(error);
+    document.getElementById('loader').innerText = 'Error de conexión. Revisa la consola.';
   });
+
+  // ==========================================
+  // 2. NAVEGACIÓN Y MIGAS DE PAN
+  // ==========================================
+  function renderBreadcrumb(active){
+    const y = selectedDate.getFullYear();
+    const q = getQuarter(selectedDate);
+    const m = NOMBRES_MES[selectedDate.getMonth()];
+    const range = formatWeekRange(getMonday(selectedDate));
+    const items = [
+      { view: 'year', label: String(y) },
+      { view: 'quarter', label: `Q${q}` },
+      { view: 'month', label: m },
+      { view: 'week', label: `Sem ${range}` }
+    ];
+    const bc = document.getElementById('breadcrumb');
+    bc.innerHTML = items.map((it, i) => {
+      const sep = i < items.length - 1 ? '<span class="sep">›</span>' : '';
+      const cls = it.view === active ? 'activo' : '';
+      return `<a href="#" data-view="${it.view}" class="${cls}">${it.label}</a>${sep}`;
+    }).join('');
+    
+    bc.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        switchView(a.dataset.view);
+      });
+    });
+  }
+
+  function switchView(name){
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    document.getElementById('view-' + name).classList.remove('hidden');
+    renderBreadcrumb(name);
+    if(name === 'week') renderWeek();
+    if(name === 'month') renderMonth();
+    if(name === 'quarter') renderQuarter();
+    if(name === 'year') renderYear();
+  }
+
+  // ==========================================
+  // 3. VISTA SEMANA
+  // ==========================================
+  function renderWeek(){
+    const monday = getMonday(selectedDate);
+    document.getElementById('week-range').textContent = formatWeekRange(monday);
+    const grid = document.getElementById('week-grid');
+    const days = [];
+    for(let i = 0; i < 5; i++) days.push(addDays(monday, i));
+
+    grid.innerHTML = days.map(d => {
+      const f = iso(d);
+      const tasks = datos.semana.filter(t => t.fecha === f);
+      const esHoy = f === hoy();
+      const tareasHTML = tasks.length
+        ? tasks.map(t => `
+            <div class="day-task ${t.hecho ? 'hecho' : ''}">
+              <input type="checkbox" ${t.hecho ? 'checked' : ''} data-toggle="${t.id}">
+              <span class="day-task-text">${esc(t.texto)}</span>
+              <button class="day-task-del" data-del="${t.id}">✕</button>
+            </div>`).join('')
+        : '';
+      return `
+        <div class="day-col ${esHoy ? 'hoy' : ''}">
+          <div class="day-header">
+            <span class="day-name">${DIAS_ES_CORTO[d.getDay()]}</span>
+            <span class="day-num">${d.getDate()}</span>
+          </div>
+          <div class="day-tasks">${tareasHTML}</div>
+          <button class="day-add" data-fecha="${f}">+ Añadir</button>
+        </div>`;
+    }).join('');
+
+    grid.querySelectorAll('.day-add').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const texto = prompt('Nueva tarea:');
+        if(!texto || !texto.trim()) return;
+        datos.semana.push({ id: uid(), fecha: btn.dataset.fecha, texto: texto.trim(), hecho: false });
+        renderWeek();
+      });
+    });
+    grid.querySelectorAll('[data-toggle]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const t = datos.semana.find(x => x.id === cb.dataset.toggle);
+        if(!t) return;
+        t.hecho = cb.checked; renderWeek();
+      });
+    });
+    grid.querySelectorAll('[data-del]').forEach(b => {
+      b.addEventListener('click', () => {
+        if(!confirm('¿Eliminar tarea?')) return;
+        datos.semana = datos.semana.filter(x => x.id !== b.dataset.del);
+        renderWeek();
+      });
+    });
+
+    renderObjetivosSemana(monday);
+  }
+
+  function renderObjetivosSemana(monday){
+    const f = iso(monday);
+    const lista = document.getElementById('lista-week-obj');
+    const objs = datos.plan.objetivos.filter(o => o.nivel === 4 && o.fecha === f);
+    if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos para esta semana.</p>'; return; }
+    lista.innerHTML = objs.map(o => `
+      <div class="obj ${o.hecho ? 'hecho' : ''}">
+        <div class="obj-head">
+          <div style="flex:1"><h3>${o.hecho ? '✓ ' : ''}${esc(o.titulo)}</h3></div>
+          <button class="btn danger" data-del-obj="${o.id}">✕</button>
+        </div>
+        <button class="btn ${o.hecho ? 'green' : 'ghost'}" data-toggle-obj="${o.id}">
+          ${o.hecho ? 'Completado' : 'Marcar hecho'}
+        </button>
+      </div>`).join('');
+      
+    lista.querySelectorAll('[data-del-obj]').forEach(b => {
+      b.addEventListener('click', () => {
+        if(!confirm('¿Eliminar?')) return;
+        datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.delObj);
+        renderObjetivosSemana(monday);
+      });
+    });
+    lista.querySelectorAll('[data-toggle-obj]').forEach(b => {
+      b.addEventListener('click', () => {
+        const o = datos.plan.objetivos.find(x => x.id === b.dataset.toggleObj);
+        if(!o) return;
+        o.hecho = !o.hecho; renderObjetivosSemana(monday);
+      });
+    });
+  }
+
+  // ==========================================
+  // 4. VISTA MES
+  // ==========================================
+  function renderMonth(){
+    const y = selectedDate.getFullYear();
+    const m = selectedDate.getMonth() + 1;
+    const prefix = `${y}-${String(m).padStart(2,'0')}-`;
+    const lista = document.getElementById('lista-month-obj');
+    const objs = datos.plan.objetivos.filter(o => o.nivel === 3 && o.fecha.startsWith(prefix));
+    if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos para este mes.</p>'; return; }
+    lista.innerHTML = objs.map(o => `
+      <div class="obj">
+        <div class="obj-head">
+          <div style="flex:1"><h3>${esc(o.titulo)}</h3></div>
+          <button class="btn danger" data-del="${o.id}">✕</button>
+        </div>
+      </div>`).join('');
+    lista.querySelectorAll('[data-del]').forEach(b => {
+      b.addEventListener('click', () => {
+        if(!confirm('¿Eliminar?')) return;
+        datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.del);
+        renderMonth();
+      });
+    });
+  }
+
+  // ==========================================
+  // 5. VISTA TRIMESTRE
+  // ==========================================
+  function renderQuarter(){
+    const y = selectedDate.getFullYear();
+    const q = getQuarter(selectedDate);
+    const startMonth = (q - 1) * 3 + 1;
+    const endMonth = q * 3;
+    const lista = document.getElementById('lista-quarter-obj');
+    const objs = datos.plan.objetivos.filter(o => {
+      if(o.nivel !== 2) return false;
+      const [oy, om] = o.fecha.split('-').map(Number);
+      return oy === y && om >= startMonth && om <= endMonth;
+    });
+    if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos para este trimestre.</p>'; return; }
+    lista.innerHTML = objs.map(o => `
+      <div class="obj">
+        <div class="obj-head">
+          <div style="flex:1"><h3>${esc(o.titulo)}</h3></div>
+          <button class="btn danger" data-del="${o.id}">✕</button>
+        </div>
+      </div>`).join('');
+    lista.querySelectorAll('[data-del]').forEach(b => {
+      b.addEventListener('click', () => {
+        if(!confirm('¿Eliminar?')) return;
+        datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.del);
+        renderQuarter();
+      });
+    });
+  }
+
+  // ==========================================
+  // 6. VISTA AÑO
+  // ==========================================
+  function renderYear(){
+    document.getElementById('p-vision').value = datos.plan.vision || '';
+    const y = selectedDate.getFullYear();
+    const lista = document.getElementById('lista-year-obj');
+    const objs = datos.plan.objetivos.filter(o => o.nivel === 1 && o.fecha.startsWith(y + '-'));
+    if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos anuales.</p>'; return; }
+    lista.innerHTML = objs.map(o => `
+      <div class="obj">
+        <div class="obj-head">
+          <div style="flex:1"><h3>${esc(o.titulo)}</h3></div>
+          <button class="btn danger" data-del="${o.id}">✕</button>
+        </div>
+      </div>`).join('');
+    lista.querySelectorAll('[data-del]').forEach(b => {
+      b.addEventListener('click', () => {
+        if(!confirm('¿Eliminar?')) return;
+        datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.del);
+        renderYear();
+      });
+    });
+  }
+
+  // ==========================================
+  // 7. BOTONES Y FORMULARIOS
+  // ==========================================
+  document.getElementById('week-prev').addEventListener('click', () => {
+    selectedDate = addDays(selectedDate, -7); renderBreadcrumb('week'); renderWeek();
+  });
+  document.getElementById('week-next').addEventListener('click', () => {
+    selectedDate = addDays(selectedDate, 7); renderBreadcrumb('week'); renderWeek();
+  });
+
+  document.getElementById('form-week-obj').addEventListener('submit', e => {
+    e.preventDefault();
+    const t = document.getElementById('wo-titulo').value.trim();
+    if(!t) return;
+    datos.plan.objetivos.push({ id: uid(), nivel: 4, fecha: iso(getMonday(selectedDate)), titulo: t, descripcion: '', hecho: false });
+    document.getElementById('wo-titulo').value = '';
+    renderWeek();
+  });
+
+  document.getElementById('form-month-obj').addEventListener('submit', e => {
+    e.preventDefault();
+    const t = document.getElementById('mo-titulo').value.trim();
+    if(!t) return;
+    const y = selectedDate.getFullYear();
+    const m = String(selectedDate.getMonth() + 1).padStart(2,'0');
+    datos.plan.objetivos.push({ id: uid(), nivel: 3, fecha: `${y}-${m}-01`, titulo: t, descripcion: '' });
+    document.getElementById('mo-titulo').value = '';
+    renderMonth();
+  });
+
+  document.getElementById('form-quarter-obj').addEventListener('submit', e => {
+    e.preventDefault();
+    const t = document.getElementById('qo-titulo').value.trim();
+    if(!t) return;
+    const y = selectedDate.getFullYear();
+    const q = getQuarter(selectedDate);
+    const startMonth = String((q - 1) * 3 + 1).padStart(2,'0');
+    datos.plan.objetivos.push({ id: uid(), nivel: 2, fecha: `${y}-${startMonth}-01`, titulo: t, descripcion: '' });
+    document.getElementById('qo-titulo').value = '';
+    renderQuarter();
+  });
+
+  document.getElementById('form-year-obj').addEventListener('submit', e => {
+    e.preventDefault();
+    const t = document.getElementById('yo-titulo').value.trim();
+    if(!t) return;
+    const y = selectedDate.getFullYear();
+    datos.plan.objetivos.push({ id: uid(), nivel: 1, fecha: `${y}-01-01`, titulo: t, descripcion: '' });
+    document.getElementById('yo-titulo').value = '';
+    renderYear();
+  });
+
+  document.getElementById('p-vision-save').addEventListener('click', () => {
+    datos.plan.vision = document.getElementById('p-vision').value;
+    alert('Visión guardada localmente (pendiente conectar a base de datos).');
+  });
+
+  // Insertar menú inferior
+  document.body.insertAdjacentHTML('beforeend', bottomNavHTML('plan'));
+
 </script>
 </body>
 </html>
