@@ -1,4 +1,4 @@
-// 1. CONFIGURACIÓN Y CREDENCIALES
+// 1. CONFIGURACIÓN
 const CONFIG = {
   diasHabitos: 14,
   columnasKanban: [
@@ -9,14 +9,12 @@ const CONFIG = {
   ]
 };
 
-// CREDENCIALES CONFIGURADAS
+// 2. CREDENCIALES
 const SUPABASE_URL = 'https://bifqmpixcempiambmlft.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_bJxzX3aevjW4Hl_Zcd8Jqg_tSa-q0uZ';
-
-// Inicializamos el cliente (Usando window.supabase para evitar el error de variable)
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 2. UTILIDADES
+// 3. UTILIDADES
 const DIAS_ES_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const LETRAS_DIA = ['D','L','M','X','J','V','S'];
 const NOMBRES_MES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -47,39 +45,30 @@ function formatWeekRange(monday){
   return `${monday.getDate()} ${m1} – ${friday.getDate()} ${m2}`;
 }
 
-// 3. LÓGICA DE AUTENTICACIÓN (LOGIN)
+// 4. SEGURIDAD (CheckUser)
 async function checkUser(){
-  try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if(error) throw error;
-    
-    if(!session){
-      if(!window.location.pathname.includes('login.html')){
-        window.location.href = 'login.html';
-      }
-    } else {
-      if(window.location.pathname.includes('login.html')){
-        window.location.href = 'index.html';
-      }
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if(!session){
+    // Si no hay sesión, lo mandamos al index (que es el login)
+    if(!window.location.pathname.endsWith('index.html') && window.location.pathname !== '/' && !window.location.pathname.endsWith('/Ghost11k/') && !window.location.pathname.endsWith('/web/')){
+      window.location.href = 'index.html';
     }
-    return session;
-  } catch(e) {
-    console.error("Error comprobando sesión:", e);
-    return null;
   }
+  return session;
 }
 
 async function logout(){
   await supabase.auth.signOut();
-  window.location.href = 'login.html';
+  window.location.href = 'index.html';
 }
 
-// 4. NAVEGACIÓN INFERIOR
+// 5. MENÚ INFERIOR ACTUALIZADO
 function bottomNavHTML(active){
   const tabs = [
-    { id: 'plan', label: 'Plan', href: 'index.html' },
-    { id: 'diario', label: 'Diario', href: 'diario.html' },
     { id: 'habitos', label: 'Hábitos', href: 'habitos.html' },
+    { id: 'plan', label: 'Plan', href: 'plan.html' }, // Ahora se llama plan.html
+    { id: 'diario', label: 'Diario', href: 'diario.html' },
     { id: 'tablero', label: 'Tablero', href: 'tablero.html' }
   ];
   return `<nav class="bottom-nav">
