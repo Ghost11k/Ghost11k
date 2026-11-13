@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendario</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Estilos específicos del Calendario */
+  .calendar-wrapper {
+    background: var(--bg);
+    border: 3px solid var(--line);
+    box-shadow: 8px 8px 0 var(--shadow);
+    margin-bottom: 20px;
+  }
+
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--cement);
+    border-bottom: 3px solid var(--line);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .cal-title { display: flex; align-items: baseline; gap: 10px; }
+  .cal-title h2 { font-size: 24px; text-transform: capitalize; font-family: Georgia, serif; }
+  .cal-title span { font-size: 14px; color: var(--terra); font-weight: bold; }
+
+  .cal-actions { display: flex; gap: 10px; align-items: center; }
+
+  button.btn-cal {
+    background: var(--bg); border: 2px solid var(--line);
+    padding: 6px 12px; font-family: inherit; font-weight: bold;
+    font-size: 12px; cursor: pointer; box-shadow: 2px 2px 0 var(--shadow);
+    text-transform: uppercase; color: var(--ink);
+  }
+  button.btn-cal:hover { background: var(--ink); color: var(--bg); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--shadow); }
+  button.btn-cal:active { transform: translate(2px, 2px); box-shadow: none; }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 3px solid var(--line);
+  }
+
+  .weekday {
+    padding: 10px; text-align: center; font-weight: bold; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
+    border-bottom: 3px solid var(--line); border-right: 2px solid var(--line);
+    background: var(--cement);
+  }
+  .weekday:last-child { border-right: none; }
+
+  .day-cell {
+    min-height: 120px; border-bottom: 2px solid var(--line); border-right: 2px solid var(--line);
+    padding: 5px; display: flex; flex-direction: column; position: relative;
+  }
+  .day-cell:nth-child(7n) { border-right: none; }
+
+  .day-cell.other-month { background: rgba(168, 162, 148, 0.1); color: var(--muted); }
+  .day-cell.other-month .day-num { opacity: 0.5; }
+
+  .day-num {
+    font-weight: bold; font-size: 12px; margin-bottom: 5px;
+    display: inline-block; width: 24px; height: 24px; line-height: 22px;
+    text-align: center; border: 2px solid transparent; cursor: pointer;
+  }
+  .day-num:hover { border-color: var(--line); }
+
+  .day-cell.today { background: var(--green-soft); }
+  .day-cell.today .day-num { background: var(--green); color: white; border-color: var(--line); }
+
+  .event {
+    font-size: 10px; padding: 3px 5px; margin-bottom: 3px;
+    border: 1px solid var(--line); background: var(--green); color: white;
+    font-weight: bold; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; cursor: pointer;
+  }
+  .event.terra { background: var(--terra); }
+  .event.outline { background: transparent; color: var(--ink); border: 2px solid var(--blue); }
+
+  @media (max-width: 800px) {
+    .day-cell { min-height: 80px; }
+    .event { display: none; } 
+    .cal-header { flex-direction: column; align-items: flex-start; }
+    .cal-actions { width: 100%; justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#ede8dc; z-index:9999; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:bold; color:#2a2825;">
+  Cargando calendario...
+</div>
+
+<main class="contenedor">
+  <div class="panel-head">
+    <h1>Calendario</h1>
+    <div class="tag">Vista General de tu tiempo</div>
+  </div>
+
+  <div class="calendar-wrapper">
+    <!-- CABECERA -->
+    <div class="cal-header">
+      <button class="btn-cal" onclick="irAHoy()">Hoy</button>
+      <div class="cal-title">
+        <h2 id="mes-titulo">Noviembre</h2>
+        <span id="anio-titulo">2026</span>
+      </div>
+      <div class="cal-actions">
+        <button class="btn-cal" onclick="cambiarMes(-1)">‹</button>
+        <button class="btn-cal" onclick="cambiarMes(1)">›</button>
+      </div>
+    </div>
+
+    <!-- DÍAS DE LA SEMANA -->
+    <div class="cal-grid">
+      <div class="weekday">Lun</div>
+      <div class="weekday">Mar</div>
+      <div class="weekday">Mié</div>
+      <div class="weekday">Jue</div>
+      <div class="weekday">Vie</div>
+      <div class="weekday">Sáb</div>
+      <div class="weekday">Dom</div>
+    </div>
+
+    <!-- REJILLA DE DÍAS -->
+    <div class="cal-grid" id="calendar-days">
+      <!-- Se genera con JavaScript -->
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+  let fechaActual = new Date();
+  
+  // Datos cargados de la web
+  let dbGeneral = { diario: [], plan: { objetivos: [] } };
+  let dbBiblioteca = { proyectos: [], libros: [] };
+
+  const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+  async function init() {
+    document.body.insertAdjacentHTML('beforeend', bottomNavHTML('calendario'));
+
+    const session = await checkUser();
+    if(!session) return;
+
+    // Cargar datos (ignorando errores si están vacíos)
+    try { dbGeneral = JSON.parse(localStorage.getItem('mi-organizacion-v1')) || dbGeneral; } catch(e){}
+    try { dbBiblioteca = JSON.parse(localStorage.getItem('biblioteca_datos_v3')) || dbBiblioteca; } catch(e){}
+
+    document.getElementById('loader').style.display = 'none';
+    renderCalendario();
+  }
+
+  // Formatear fecha a YYYY-MM-DD
+  function formatFecha(y, m, d) {
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+
+  function renderCalendario() {
+    const anio = fechaActual.getFullYear();
+    const mes = fechaActual.getMonth();
+
+    document.getElementById('mes-titulo').textContent = MESES[mes];
+    document.getElementById('anio-titulo').textContent = anio;
+
+    const primerDiaMes = new Date(anio, mes, 1);
+    const ultimoDiaMes = new Date(anio, mes + 1, 0);
+    
+    // Ajustar para que la semana empiece en Lunes (0=Lunes, 6=Domingo)
+    let diaInicioSemana = primerDiaMes.getDay() - 1;
+    if (diaInicioSemana === -1) diaInicioSemana = 6; 
+
+    const diasEnMes = ultimoDiaMes.getDate();
+    const diasMesAnterior = new Date(anio, mes, 0).getDate();
+
+    let html = '';
+
+    // Días del mes anterior (relleno)
+    for (let i = diaInicioSemana; i > 0; i--) {
+      const dia = diasMesAnterior - i + 1;
+      html += `<div class="day-cell other-month"><span class="day-num">${dia}</span></div>`;
+    }
+
+    // Días del mes actual
+    const hoyStr = formatFecha(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+    for (let i = 1; i <= diasEnMes; i++) {
+      const fechaStr = formatFecha(anio, mes, i);
+      const esHoy = fechaStr === hoyStr;
+      
+      // Buscar eventos para este día
+      let eventosHTML = '';
+
+      // 1. Entradas de Diario
+      const diarioDia = dbGeneral.diario?.filter(d => d.fecha === fechaStr) || [];
+      diarioDia.forEach(d => {
+        eventosHTML += `<div class="event outline" title="${d.titulo}">📔 ${d.titulo}</div>`;
+      });
+
+      // 2. Objetivos del Plan (nivel 1,2,3,4 cuya fecha coincida)
+      const planDia = dbGeneral.plan?.objetivos?.filter(o => o.fecha === fechaStr) || [];
+      planDia.forEach(o => {
+        eventosHTML += `<div class="event">🎯 ${o.titulo}</div>`;
+      });
+
+      // 3. Proyectos de escritura (fecha de creación)
+      const proyectosDia = dbBiblioteca.proyectos?.filter(p => p.fecha === fechaStr) || [];
+      proyectosDia.forEach(p => {
+        eventosHTML += `<div class="event terra" title="${p.titulo}">✍️ ${p.titulo}</div>`;
+      });
+
+      html += `
+        <div class="day-cell ${esHoy ? 'today' : ''}">
+          <span class="day-num">${i}</span>
+          ${eventosHTML}
+        </div>
+      `;
+    }
+
+    // Días del mes siguiente (relleno para completar la cuadrícula de 7 columnas)
+    const celdasTotales = diaInicioSemana + diasEnMes;
+    const celdasRestantes = (7 - (celdasTotales % 7)) % 7;
+    
+    for (let i = 1; i <= celdasRestantes; i++) {
+      html += `<div class="day-cell other-month"><span class="day-num">${i}</span></div>`;
+    }
+
+    document.getElementById('calendar-days').innerHTML = html;
+  }
+
+  function cambiarMes(delta) {
+    fechaActual.setMonth(fechaActual.getMonth() + delta);
+    renderCalendario();
+  }
+
+  function irAHoy() {
+    fechaActual = new Date();
+    renderCalendario();
+  }
+
+  init();
+</script>
+</body>
+</html>
