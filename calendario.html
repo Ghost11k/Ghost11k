@@ -6,88 +6,100 @@
 <title>Calendario</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-  /* Estilos específicos del Calendario */
-  .calendar-wrapper {
-    background: var(--bg);
-    border: 3px solid var(--line);
-    box-shadow: 8px 8px 0 var(--shadow);
-    margin-bottom: 20px;
+  /* Controles superiores */
+  .view-controls {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 15px; flex-wrap: wrap; gap: 10px;
   }
-
-  .cal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    background: var(--cement);
-    border-bottom: 3px solid var(--line);
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .cal-title { display: flex; align-items: baseline; gap: 10px; }
-  .cal-title h2 { font-size: 24px; text-transform: capitalize; font-family: Georgia, serif; }
-  .cal-title span { font-size: 14px; color: var(--terra); font-weight: bold; }
-
-  .cal-actions { display: flex; gap: 10px; align-items: center; }
-
-  button.btn-cal {
+  .view-toggle { display: flex; gap: 5px; }
+  .view-toggle button {
     background: var(--bg); border: 2px solid var(--line);
-    padding: 6px 12px; font-family: inherit; font-weight: bold;
-    font-size: 12px; cursor: pointer; box-shadow: 2px 2px 0 var(--shadow);
-    text-transform: uppercase; color: var(--ink);
+    padding: 6px 15px; font-weight: bold; font-family: inherit;
+    cursor: pointer; text-transform: uppercase; font-size: 12px;
   }
-  button.btn-cal:hover { background: var(--ink); color: var(--bg); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--shadow); }
-  button.btn-cal:active { transform: translate(2px, 2px); box-shadow: none; }
+  .view-toggle button.activo { background: var(--ink); color: var(--bg); }
 
-  .cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    border-bottom: 3px solid var(--line);
+  /* Wrapper general */
+  .calendar-wrapper {
+    background: var(--bg); border: 3px solid var(--line);
+    box-shadow: 8px 8px 0 var(--shadow); display: flex; flex-direction: column;
   }
 
+  /* Cabecera */
+  .cal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 20px; background: var(--cement); border-bottom: 3px solid var(--line);
+  }
+  .cal-title h2 { font-size: 24px; text-transform: capitalize; font-family: Georgia, serif; margin: 0; }
+  .cal-title span { font-size: 14px; color: var(--terra); font-weight: bold; margin-left: 10px; }
+  button.btn-cal {
+    background: var(--bg); border: 2px solid var(--line); padding: 6px 12px;
+    font-family: inherit; font-weight: bold; font-size: 12px; cursor: pointer;
+    box-shadow: 2px 2px 0 var(--shadow); text-transform: uppercase; color: var(--ink);
+  }
+  button.btn-cal:hover { background: var(--ink); color: var(--bg); }
+
+  /* ================= VISTA MENSUAL ================= */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
   .weekday {
     padding: 10px; text-align: center; font-weight: bold; font-size: 11px;
-    text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
-    border-bottom: 3px solid var(--line); border-right: 2px solid var(--line);
-    background: var(--cement);
+    text-transform: uppercase; border-bottom: 3px solid var(--line);
+    border-right: 2px solid var(--line); background: var(--cement);
   }
   .weekday:last-child { border-right: none; }
-
   .day-cell {
-    min-height: 120px; border-bottom: 2px solid var(--line); border-right: 2px solid var(--line);
-    padding: 5px; display: flex; flex-direction: column; position: relative;
+    min-height: 110px; border-bottom: 2px solid var(--line); border-right: 2px solid var(--line);
+    padding: 5px; display: flex; flex-direction: column; position: relative; cursor: pointer;
   }
+  .day-cell:hover { background: rgba(168, 162, 148, 0.1); }
   .day-cell:nth-child(7n) { border-right: none; }
-
-  .day-cell.other-month { background: rgba(168, 162, 148, 0.1); color: var(--muted); }
-  .day-cell.other-month .day-num { opacity: 0.5; }
-
-  .day-num {
-    font-weight: bold; font-size: 12px; margin-bottom: 5px;
-    display: inline-block; width: 24px; height: 24px; line-height: 22px;
-    text-align: center; border: 2px solid transparent; cursor: pointer;
-  }
-  .day-num:hover { border-color: var(--line); }
-
+  .day-cell.other-month { opacity: 0.4; background: rgba(168, 162, 148, 0.05); }
+  .day-num { font-weight: bold; font-size: 12px; margin-bottom: 5px; pointer-events: none; }
   .day-cell.today { background: var(--green-soft); }
-  .day-cell.today .day-num { background: var(--green); color: white; border-color: var(--line); }
-
+  .day-cell.today .day-num { background: var(--green); color: white; padding: 2px 6px; display: inline-block; }
+  
   .event {
-    font-size: 10px; padding: 3px 5px; margin-bottom: 3px;
-    border: 1px solid var(--line); background: var(--green); color: white;
-    font-weight: bold; white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; cursor: pointer;
+    font-size: 10px; padding: 2px 4px; margin-bottom: 2px;
+    border: 1px solid var(--line); font-weight: bold;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    pointer-events: none;
   }
-  .event.terra { background: var(--terra); }
-  .event.outline { background: transparent; color: var(--ink); border: 2px solid var(--blue); }
+  .event.verde { background: var(--green); color: white; }
+  .event.terracota { background: var(--terra); color: white; }
+  .event.azul { background: var(--blue); color: white; }
 
-  @media (max-width: 800px) {
-    .day-cell { min-height: 80px; }
-    .event { display: none; } 
-    .cal-header { flex-direction: column; align-items: flex-start; }
-    .cal-actions { width: 100%; justify-content: space-between; }
+  /* ================= VISTA SEMANAL ================= */
+  .week-view-container {
+    display: flex; flex-direction: column; height: 60vh; overflow-y: auto;
   }
+  .week-header { display: flex; border-bottom: 2px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 10; }
+  .week-header .time-col { width: 60px; flex-shrink: 0; border-right: 2px solid var(--line); }
+  .week-header .day-col-h { flex: 1; text-align: center; padding: 10px 0; border-right: 1px solid var(--line); font-size: 12px; font-weight: bold; }
+  .week-header .day-col-h.today { background: var(--green-soft); color: var(--green); }
+  .week-header .day-col-h:last-child { border-right: none; }
+  
+  .week-body { display: flex; flex-direction: column; }
+  .week-row { display: flex; min-height: 50px; border-bottom: 1px solid var(--line); }
+  .time-col { width: 60px; flex-shrink: 0; border-right: 2px solid var(--line); text-align: right; padding-right: 5px; font-size: 10px; color: var(--muted); font-weight: bold; transform: translateY(-8px); }
+  .time-slot { flex: 1; border-right: 1px solid var(--line); position: relative; cursor: pointer; }
+  .time-slot:hover { background: rgba(168, 162, 148, 0.1); }
+  .time-slot:last-child { border-right: none; }
+  .time-slot .event { position: absolute; top: 2px; left: 2px; right: 2px; bottom: 2px; margin: 0; white-space: normal; overflow: hidden; }
+
+  /* ================= MODAL PARA AÑADIR ================= */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-box {
+    background: var(--cement); border: 3px solid var(--line);
+    box-shadow: 8px 8px 0 var(--shadow); padding: 25px; width: 90%; max-width: 400px;
+  }
+  .modal-box h2 { margin-bottom: 15px; font-family: Georgia, serif; border-bottom: 2px solid var(--line); padding-bottom: 10px; }
+  .modal-box label { display: block; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-top: 10px; color: var(--muted); }
+  .modal-box input, .modal-box select { margin-bottom: 10px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
 </style>
 </head>
 <body>
@@ -99,145 +111,130 @@
 <main class="contenedor">
   <div class="panel-head">
     <h1>Calendario</h1>
-    <div class="tag">Vista General de tu tiempo</div>
+    <div class="tag">Gestión del tiempo</div>
+  </div>
+
+  <div class="view-controls">
+    <div class="view-toggle">
+      <button id="btn-view-month" class="activo" onclick="cambiarVista('mes')">Mes</button>
+      <button id="btn-view-week" onclick="cambiarVista('semana')">Semana</button>
+    </div>
+    <button class="btn-cal" onclick="abrirModal()" style="background:var(--green); color:white;">+ Nueva Cita</button>
   </div>
 
   <div class="calendar-wrapper">
-    <!-- CABECERA -->
     <div class="cal-header">
       <button class="btn-cal" onclick="irAHoy()">Hoy</button>
       <div class="cal-title">
-        <h2 id="mes-titulo">Noviembre</h2>
-        <span id="anio-titulo">2026</span>
+        <h2 id="mes-titulo"></h2>
+        <span id="anio-titulo"></span>
       </div>
       <div class="cal-actions">
-        <button class="btn-cal" onclick="cambiarMes(-1)">‹</button>
-        <button class="btn-cal" onclick="cambiarMes(1)">›</button>
+        <button class="btn-cal" id="btn-prev" onclick="cambiarPeriodo(-1)">‹</button>
+        <button class="btn-cal" id="btn-next" onclick="cambiarPeriodo(1)">›</button>
       </div>
     </div>
 
-    <!-- DÍAS DE LA SEMANA -->
-    <div class="cal-grid">
-      <div class="weekday">Lun</div>
-      <div class="weekday">Mar</div>
-      <div class="weekday">Mié</div>
-      <div class="weekday">Jue</div>
-      <div class="weekday">Vie</div>
-      <div class="weekday">Sáb</div>
-      <div class="weekday">Dom</div>
+    <!-- Contenedores de las vistas -->
+    <div id="vista-mes">
+      <div class="cal-grid" id="month-weekdays"></div>
+      <div class="cal-grid" id="month-days"></div>
     </div>
 
-    <!-- REJILLA DE DÍAS -->
-    <div class="cal-grid" id="calendar-days">
-      <!-- Se genera con JavaScript -->
+    <div id="vista-semana" style="display:none;">
+      <div class="week-view-container">
+        <div class="week-header" id="week-header"></div>
+        <div class="week-body" id="week-body"></div>
+      </div>
     </div>
   </div>
 </main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <h2>Nueva Cita</h2>
+    <form id="form-evento">
+      <label for="ev-titulo">Título de la cita</label>
+      <input type="text" id="ev-titulo" required placeholder="Ej: Reunión, Dentista...">
+      
+      <label for="ev-fecha">Fecha</label>
+      <input type="date" id="ev-fecha" required>
+      
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1">
+          <label for="ev-inicio">Hora Inicio</label>
+          <input type="time" id="ev-inicio" required>
+        </div>
+        <div style="flex:1">
+          <label for="ev-fin">Hora Fin (opcional)</label>
+          <input type="time" id="ev-fin">
+        </div>
+      </div>
+
+      <label for="ev-color">Color</label>
+      <select id="ev-color">
+        <option value="verde">🟢 Verde (Normal)</option>
+        <option value="terracota">🟠 Terracota (Importante)</option>
+        <option value="azul">🔵 Azul (Trabajo/Estudio)</option>
+      </select>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn-cal" onclick="cerrarModal()">Cancelar</button>
+        <button type="submit" class="btn-cal" style="background:var(--green); color:white;">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
   let fechaActual = new Date();
+  let vistaActual = 'mes'; // 'mes' o 'semana'
+  let usuarioId = null;
+  let listaEventos = [];
   
-  // Datos cargados de la web
-  let dbGeneral = { diario: [], plan: { objetivos: [] } };
-  let dbBiblioteca = { proyectos: [], libros: [] };
-
   const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const DIAS_CORTOS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const HORAS = Array.from({length: 15}, (_, i) => i + 7); // De 7:00 a 21:00
+
+  function formatFecha(y, m, d) { return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
+  function hoyStr() { const d = new Date(); return formatFecha(d.getFullYear(), d.getMonth(), d.getDate()); }
 
   async function init() {
     document.body.insertAdjacentHTML('beforeend', bottomNavHTML('calendario'));
-
     const session = await checkUser();
     if(!session) return;
+    usuarioId = session.user.id;
 
-    // Cargar datos (ignorando errores si están vacíos)
-    try { dbGeneral = JSON.parse(localStorage.getItem('mi-organizacion-v1')) || dbGeneral; } catch(e){}
-    try { dbBiblioteca = JSON.parse(localStorage.getItem('biblioteca_datos_v3')) || dbBiblioteca; } catch(e){}
-
+    await cargarEventos();
     document.getElementById('loader').style.display = 'none';
     renderCalendario();
   }
 
-  // Formatear fecha a YYYY-MM-DD
-  function formatFecha(y, m, d) {
-    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  async function cargarEventos() {
+    const { data, error } = await supabaseClient.from('eventos').select('*');
+    if(error) { console.error('Error cargando eventos', error); return; }
+    listaEventos = data || [];
   }
 
-  function renderCalendario() {
-    const anio = fechaActual.getFullYear();
-    const mes = fechaActual.getMonth();
-
-    document.getElementById('mes-titulo').textContent = MESES[mes];
-    document.getElementById('anio-titulo').textContent = anio;
-
-    const primerDiaMes = new Date(anio, mes, 1);
-    const ultimoDiaMes = new Date(anio, mes + 1, 0);
-    
-    // Ajustar para que la semana empiece en Lunes (0=Lunes, 6=Domingo)
-    let diaInicioSemana = primerDiaMes.getDay() - 1;
-    if (diaInicioSemana === -1) diaInicioSemana = 6; 
-
-    const diasEnMes = ultimoDiaMes.getDate();
-    const diasMesAnterior = new Date(anio, mes, 0).getDate();
-
-    let html = '';
-
-    // Días del mes anterior (relleno)
-    for (let i = diaInicioSemana; i > 0; i--) {
-      const dia = diasMesAnterior - i + 1;
-      html += `<div class="day-cell other-month"><span class="day-num">${dia}</span></div>`;
-    }
-
-    // Días del mes actual
-    const hoyStr = formatFecha(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-
-    for (let i = 1; i <= diasEnMes; i++) {
-      const fechaStr = formatFecha(anio, mes, i);
-      const esHoy = fechaStr === hoyStr;
-      
-      // Buscar eventos para este día
-      let eventosHTML = '';
-
-      // 1. Entradas de Diario
-      const diarioDia = dbGeneral.diario?.filter(d => d.fecha === fechaStr) || [];
-      diarioDia.forEach(d => {
-        eventosHTML += `<div class="event outline" title="${d.titulo}">📔 ${d.titulo}</div>`;
-      });
-
-      // 2. Objetivos del Plan (nivel 1,2,3,4 cuya fecha coincida)
-      const planDia = dbGeneral.plan?.objetivos?.filter(o => o.fecha === fechaStr) || [];
-      planDia.forEach(o => {
-        eventosHTML += `<div class="event">🎯 ${o.titulo}</div>`;
-      });
-
-      // 3. Proyectos de escritura (fecha de creación)
-      const proyectosDia = dbBiblioteca.proyectos?.filter(p => p.fecha === fechaStr) || [];
-      proyectosDia.forEach(p => {
-        eventosHTML += `<div class="event terra" title="${p.titulo}">✍️ ${p.titulo}</div>`;
-      });
-
-      html += `
-        <div class="day-cell ${esHoy ? 'today' : ''}">
-          <span class="day-num">${i}</span>
-          ${eventosHTML}
-        </div>
-      `;
-    }
-
-    // Días del mes siguiente (relleno para completar la cuadrícula de 7 columnas)
-    const celdasTotales = diaInicioSemana + diasEnMes;
-    const celdasRestantes = (7 - (celdasTotales % 7)) % 7;
-    
-    for (let i = 1; i <= celdasRestantes; i++) {
-      html += `<div class="day-cell other-month"><span class="day-num">${i}</span></div>`;
-    }
-
-    document.getElementById('calendar-days').innerHTML = html;
+  // ================= NAVEGACIÓN Y VISTAS =================
+  function cambiarVista(v) {
+    vistaActual = v;
+    document.getElementById('btn-view-month').classList.toggle('activo', v === 'mes');
+    document.getElementById('btn-view-week').classList.toggle('activo', v === 'semana');
+    document.getElementById('vista-mes').style.display = v === 'mes' ? 'block' : 'none';
+    document.getElementById('vista-semana').style.display = v === 'semana' ? 'block' : 'none';
+    renderCalendario();
   }
 
-  function cambiarMes(delta) {
-    fechaActual.setMonth(fechaActual.getMonth() + delta);
+  function cambiarPeriodo(dir) {
+    if(vistaActual === 'mes') {
+      fechaActual.setMonth(fechaActual.getMonth() + dir);
+    } else {
+      fechaActual.setDate(fechaActual.getDate() + (dir * 7));
+    }
     renderCalendario();
   }
 
@@ -245,6 +242,148 @@
     fechaActual = new Date();
     renderCalendario();
   }
+
+  function renderCalendario() {
+    if(vistaActual === 'mes') renderVistaMes();
+    else renderVistaSemana();
+  }
+
+  // ================= VISTA MENSUAL =================
+  function renderVistaMes() {
+    const anio = fechaActual.getFullYear();
+    const mes = fechaActual.getMonth();
+
+    document.getElementById('mes-titulo').textContent = MESES[mes];
+    document.getElementById('anio-titulo').textContent = anio;
+
+    document.getElementById('month-weekdays').innerHTML = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+      .map(d => `<div class="weekday">${d}</div>`).join('');
+
+    const primerDiaMes = new Date(anio, mes, 1);
+    const ultimoDiaMes = new Date(anio, mes + 1, 0);
+    let diaInicioSemana = primerDiaMes.getDay() - 1;
+    if (diaInicioSemana === -1) diaInicioSemana = 6; 
+
+    const diasEnMes = ultimoDiaMes.getDate();
+    const diasMesAnterior = new Date(anio, mes, 0).getDate();
+    const hoy = hoyStr();
+    let html = '';
+
+    // Relleno anterior
+    for (let i = diaInicioSemana; i > 0; i--) {
+      html += `<div class="day-cell other-month"><span class="day-num">${diasMesAnterior - i + 1}</span></div>`;
+    }
+
+    // Días del mes
+    for (let i = 1; i <= diasEnMes; i++) {
+      const fStr = formatFecha(anio, mes, i);
+      const evs = listaEventos.filter(e => e.fecha === fStr).sort((a,b) => a.hora_inicio.localeCompare(b.hora_inicio));
+      
+      let evsHTML = evs.slice(0, 3).map(e => 
+        `<div class="event ${e.color}">${e.hora_inicio} ${e.titulo}</div>`
+      ).join('');
+      
+      if(evs.length > 3) evsHTML += `<div style="font-size:10px; font-weight:bold; text-align:center;">+ ${evs.length - 3} más</div>`;
+
+      html += `
+        <div class="day-cell ${fStr === hoy ? 'today' : ''}" onclick="abrirModal('${fStr}')">
+          <span class="day-num">${i}</span>
+          ${evsHTML}
+        </div>
+      `;
+    }
+    
+    // Relleno siguiente
+    const celdasTotales = diaInicioSemana + diasEnMes;
+    const celdasRestantes = (7 - (celdasTotales % 7)) % 7;
+    for (let i = 1; i <= celdasRestantes; i++) {
+      html += `<div class="day-cell other-month"><span class="day-num">${i}</span></div>`;
+    }
+
+    document.getElementById('month-days').innerHTML = html;
+  }
+
+  // ================= VISTA SEMANAL =================
+  function renderVistaSemana() {
+    // Obtener el lunes de la semana actual
+    let lunes = new Date(fechaActual);
+    let dia = lunes.getDay();
+    let diff = lunes.getDate() - dia + (dia === 0 ? -6 : 1); 
+    lunes.setDate(diff);
+
+    const domingo = new Date(lunes);
+    domingo.setDate(lunes.getDate() + 6);
+
+    document.getElementById('mes-titulo').textContent = `${lunes.getDate()} ${MESES[lunes.getMonth()].slice(0,3)} - ${domingo.getDate()} ${MESES[domingo.getMonth()].slice(0,3)}`;
+    document.getElementById('anio-titulo').textContent = lunes.getFullYear();
+
+    // Generar Cabecera (Días)
+    let headHTML = `<div class="time-col"></div>`;
+    const diasSemana = [];
+    for(let i=0; i<7; i++) {
+      const d = new Date(lunes);
+      d.setDate(d.getDate() + i);
+      diasSemana.push(d);
+      const esHoy = formatFecha(d.getFullYear(), d.getMonth(), d.getDate()) === hoyStr();
+      headHTML += `<div class="day-col-h ${esHoy ? 'today' : ''}">${DIAS_CORTOS[d.getDay()]} ${d.getDate()}</div>`;
+    }
+    document.getElementById('week-header').innerHTML = headHTML;
+
+    // Generar Cuerpo (Horas)
+    let bodyHTML = '';
+    HORAS.forEach(hora => {
+      bodyHTML += `<div class="week-row">`;
+      bodyHTML += `<div class="time-col">${String(hora).padStart(2,'0')}:00</div>`;
+      
+      diasSemana.forEach(d => {
+        const fStr = formatFecha(d.getFullYear(), d.getMonth(), d.getDate());
+        // Buscar eventos que empiecen a esta hora
+        const evs = listaEventos.filter(e => e.fecha === fStr && e.hora_inicio.startsWith(String(hora).padStart(2,'0')));
+        
+        let evsHTML = evs.map(e => 
+          `<div class="event ${e.color}">${e.titulo}</div>`
+        ).join('');
+
+        bodyHTML += `<div class="time-slot" onclick="abrirModal('${fStr}', '${String(hora).padStart(2,'0')}:00')">${evsHTML}</div>`;
+      });
+      bodyHTML += `</div>`;
+    });
+    document.getElementById('week-body').innerHTML = bodyHTML;
+  }
+
+  // ================= MODAL Y GUARDADO =================
+  function abrirModal(fecha = hoyStr(), hora = '09:00') {
+    document.getElementById('ev-fecha').value = fecha;
+    document.getElementById('ev-inicio').value = hora;
+    document.getElementById('ev-titulo').value = '';
+    document.getElementById('modal').classList.add('active');
+    document.getElementById('ev-titulo').focus();
+  }
+
+  function cerrarModal() {
+    document.getElementById('modal').classList.remove('active');
+  }
+
+  document.getElementById('form-evento').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const titulo = document.getElementById('ev-titulo').value;
+    const fecha = document.getElementById('ev-fecha').value;
+    const hora_inicio = document.getElementById('ev-inicio').value;
+    const hora_fin = document.getElementById('ev-fin').value;
+    const color = document.getElementById('ev-color').value;
+
+    const { error } = await supabaseClient.from('eventos').insert([{
+      titulo, fecha, hora_inicio, hora_fin, color, user_id: usuarioId
+    }]);
+
+    if(error) {
+      alert('Error al guardar: ' + error.message);
+    } else {
+      cerrarModal();
+      await cargarEventos();
+      renderCalendario();
+    }
+  });
 
   init();
 </script>
