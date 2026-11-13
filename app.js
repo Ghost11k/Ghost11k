@@ -73,13 +73,17 @@ async function logout(){
 }
 
 // 5. MENÚ INFERIOR
+// 4. MENÚ INFERIOR (Reemplaza tu función actual por esta)
 function bottomNavHTML(active){
   const tabs = [
+    { id: 'calendario', label: 'Calendario', href: 'calendario.html' }, // NUEVO
     { id: 'habitos', label: 'Hábitos', href: 'habitos.html' },
     { id: 'plan', label: 'Plan', href: 'plan.html' },
     { id: 'diario', label: 'Diario', href: 'diario.html' },
+    { id: 'biblioteca', label: 'Libros', href: 'biblioteca.html' },
     { id: 'tablero', label: 'Tablero', href: 'tablero.html' }
   ];
+  
   return `<nav class="bottom-nav">
     ${tabs.map((t, i) => `
       <a href="${t.href}" class="${active === t.id ? 'activo' : ''}">
