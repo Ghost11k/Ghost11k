@@ -76,12 +76,12 @@ async function logout(){
 // 4. MENÚ INFERIOR (Reemplaza tu función actual por esta)
 function bottomNavHTML(active){
   const tabs = [
-    { id: 'calendario', label: 'Calendario', href: 'calendario.html' }, // NUEVO
+    { id: 'dashboard', label: 'Panel', href: 'dashboard.html' },
+    { id: 'calendario', label: 'Agenda', href: 'calendario.html' },
     { id: 'habitos', label: 'Hábitos', href: 'habitos.html' },
     { id: 'plan', label: 'Plan', href: 'plan.html' },
     { id: 'diario', label: 'Diario', href: 'diario.html' },
-    { id: 'biblioteca', label: 'Libros', href: 'biblioteca.html' },
-    { id: 'tablero', label: 'Tablero', href: 'tablero.html' }
+    { id: 'biblioteca', label: 'Libros', href: 'biblioteca.html' }
   ];
   
   return `<nav class="bottom-nav">
