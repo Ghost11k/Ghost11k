@@ -49,9 +49,9 @@
 </head>
 <body>
 
+<!-- PANTALLA DE CARGA INTELIGENTE -->
 <div id="loader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#ede8dc; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:monospace; font-weight:bold; color:#2a2825;">
-  <div>Cargando plan...</div>
-  <div id="error-msg" style="color:var(--terra); font-size:12px; margin-top:10px; display:none; text-align:center; padding:20px;"></div>
+  <div id="loader-text">Conectando con el Plan...</div>
 </div>
 
 <main class="contenedor">
@@ -161,6 +161,21 @@
   </div>
 </main>
 
+<script>
+  // CAPTURADOR DE ERRORES GLOBAL (Muestra errores en pantalla)
+  window.onerror = function(msg, url, lineNo, columnNo, error) {
+    const loader = document.getElementById('loader');
+    if(loader && loader.style.display !== 'none') {
+      loader.innerHTML = `<div style="color:#a8563c; text-align:center; padding:20px; max-width:600px;">
+        <strong style="font-size:16px;">Error de Script</strong><br><br>
+        <span style="font-size:13px; font-family:monospace;">${msg} (Línea ${lineNo})</span><br><br>
+        <button onclick="location.reload()" style="padding:10px; font-weight:bold; cursor:pointer; border:2px solid #a8563c; background:transparent; color:#a8563c;">Reintentar</button>
+      </div>`;
+    }
+    return false;
+  };
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
@@ -169,39 +184,55 @@
   const planUI = { anual: null, trim: null, mes: null };
 
   async function init() {
-    document.body.insertAdjacentHTML('beforeend', bottomNavHTML('plan'));
     const loader = document.getElementById('loader');
-    const errDiv = document.getElementById('error-msg');
-
+    const loaderText = document.getElementById('loader-text');
+    
     try {
-      const session = await checkUser();
-      if(!session) return;
-      usuarioId = session.user.id;
+      document.body.insertAdjacentHTML('beforeend', bottomNavHTML('plan'));
+      
+      loaderText.innerText = "Verificando usuario...";
+      
+      // Añadimos un límite de tiempo de 5 segundos a la comprobación de sesión
+      const session = await Promise.race([
+        checkUser(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("La conexión con Supabase ha tardado demasiado.")), 5000))
+      ]);
 
+      if (!session) {
+        loader.style.display = 'none';
+        return; // checkUser() ya te habrá redirigido al login
+      }
+      
+      usuarioId = session.user.id;
+      
+      loaderText.innerText = "Cargando tus objetivos...";
       await cargarDatos();
       
-      // Si todo va bien, quitamos el loader
+      // Si llegamos aquí sin errores, ocultamos el cargador
       loader.style.display = 'none';
+      
     } catch (err) {
-      // Si hay un error, lo mostramos para saber qué pasa
       console.error(err);
-      loader.firstElementChild.innerText = "Error al cargar";
-      errDiv.style.display = 'block';
-      errDiv.innerText = "Revisa que las tablas 'objetivos' y 'configuracion' existan en Supabase. Detalle: " + err.message;
+      loader.innerHTML = `<div style="color:#a8563c; text-align:center; padding:20px; max-width:600px;">
+        <strong style="font-size:16px;">Error al cargar el plan</strong><br><br>
+        <span style="font-size:13px; font-family:monospace;">${err.message}</span><br><br>
+        <p style="font-size:12px; margin-bottom:15px;">Revisa que hayas ejecutado el código SQL en Supabase para crear las tablas 'objetivos' y 'configuracion'.</p>
+        <button onclick="location.reload()" style="padding:10px; font-weight:bold; cursor:pointer; border:2px solid #a8563c; background:transparent; color:#a8563c;">Reintentar</button>
+      </div>`;
     }
   }
 
   async function cargarDatos() {
-    // 1. Cargar visión (usando maybeSingle para que no falle si está vacía)
+    // 1. Cargar visión
     const resConfig = await supabaseClient.from('configuracion').select('*').eq('user_id', usuarioId).maybeSingle();
-    if(resConfig.error) throw new Error("Fallo al leer configuración: " + resConfig.error.message);
+    if(resConfig.error) throw new Error("Fallo al leer 'configuracion': " + resConfig.error.message);
     if(resConfig.data && resConfig.data.vision) {
       document.getElementById('p-vision').value = resConfig.data.vision;
     }
 
     // 2. Cargar objetivos
     const resObjs = await supabaseClient.from('objetivos').select('*').order('id', { ascending: true });
-    if(resObjs.error) throw new Error("Fallo al leer objetivos: " + resObjs.error.message);
+    if(resObjs.error) throw new Error("Fallo al leer 'objetivos': " + resObjs.error.message);
     
     objetivos = resObjs.data || [];
     renderPlan();
@@ -358,7 +389,7 @@
     const { error } = await supabaseClient.from('objetivos').insert([{
       nivel, parent_id: parentId, periodo, titulo, descripcion: '', progreso: 0, hecho: false, user_id: usuarioId
     }]);
-    if(error) alert('Error: ' + error.message);
+    if(error) alert('Error al guardar: ' + error.message);
     else await cargarDatos();
   }
 
@@ -376,7 +407,7 @@
     }
     
     const { error } = await supabaseClient.from('objetivos').delete().in('id', aBorrar);
-    if(error) alert('Error: ' + error.message);
+    if(error) alert('Error al borrar: ' + error.message);
     else await cargarDatos();
   }
 
@@ -397,7 +428,6 @@
   // ==========================================
   document.getElementById('p-vision-save').addEventListener('click', async () => {
     const vision = document.getElementById('p-vision').value;
-    // Upsert para que lo cree o lo actualice
     const { error } = await supabaseClient.from('configuracion').upsert({ id: 1, vision, user_id: usuarioId });
     if(error) alert('Error: ' + error.message);
     else alert('Visión guardada en la nube.');
