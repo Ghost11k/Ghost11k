@@ -21,8 +21,7 @@
   .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--line); flex-wrap: wrap; }
   .section-num { font-size: 11px; letter-spacing: 0.15em; color: var(--terra); font-weight: 700; }
   .section-title { font-family: Georgia, serif; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; flex: 1; }
-  .section-meta { font-size: 10px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; }
-
+  
   .vision-textarea { font-family: Georgia, serif; font-size: 18px; line-height: 1.65; font-style: italic; min-height: 140px; padding: 20px; background: var(--bg); border: 2px solid var(--line); color: var(--ink); width: 100%; }
 
   .parent-filter { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 12px; background: var(--bg); border: 2px dashed var(--line); flex-wrap: wrap; }
@@ -50,8 +49,9 @@
 </head>
 <body>
 
-<div id="loader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#ede8dc; z-index:9999; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:bold; color:#2a2825;">
-  Cargando plan...
+<div id="loader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#ede8dc; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:monospace; font-weight:bold; color:#2a2825;">
+  <div>Cargando plan...</div>
+  <div id="error-msg" style="color:var(--terra); font-size:12px; margin-top:10px; display:none; text-align:center; padding:20px;"></div>
 </div>
 
 <main class="contenedor">
@@ -94,7 +94,7 @@
     <form class="add-form" id="form-anual" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
       <input type="text" id="anual-titulo" placeholder="Título del objetivo anual" style="flex:2; min-width:200px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
       <input type="text" id="anual-periodo" placeholder="Año" value="2026" style="flex:1; max-width:100px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
-      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow);">Añadir</button>
+      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow); cursor:pointer;">Añadir</button>
     </form>
     <div class="lista" data-lista="anual"></div>
   </div>
@@ -114,7 +114,7 @@
       <select id="trim-periodo" style="flex:1; max-width:120px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
         <option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option>
       </select>
-      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow);">Añadir</button>
+      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow); cursor:pointer;">Añadir</button>
     </form>
     <div class="lista" data-lista="trimestral"></div>
   </div>
@@ -135,7 +135,7 @@
         <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option>
         <option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
       </select>
-      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow);">Añadir</button>
+      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow); cursor:pointer;">Añadir</button>
     </form>
     <div class="lista" data-lista="mensual"></div>
   </div>
@@ -155,7 +155,7 @@
       <select id="sem-periodo" style="flex:1; max-width:130px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
         <option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option>
       </select>
-      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow);">Añadir</button>
+      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow); cursor:pointer;">Añadir</button>
     </form>
     <div class="lista" data-lista="semanal"></div>
   </div>
@@ -167,30 +167,43 @@
   let usuarioId = null;
   let objetivos = [];
   const planUI = { anual: null, trim: null, mes: null };
-  
-  const NOMBRES_MES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
   async function init() {
     document.body.insertAdjacentHTML('beforeend', bottomNavHTML('plan'));
-    const session = await checkUser();
-    if(!session) return;
-    usuarioId = session.user.id;
+    const loader = document.getElementById('loader');
+    const errDiv = document.getElementById('error-msg');
 
-    await cargarDatos();
-    document.getElementById('loader').style.display = 'none';
+    try {
+      const session = await checkUser();
+      if(!session) return;
+      usuarioId = session.user.id;
+
+      await cargarDatos();
+      
+      // Si todo va bien, quitamos el loader
+      loader.style.display = 'none';
+    } catch (err) {
+      // Si hay un error, lo mostramos para saber qué pasa
+      console.error(err);
+      loader.firstElementChild.innerText = "Error al cargar";
+      errDiv.style.display = 'block';
+      errDiv.innerText = "Revisa que las tablas 'objetivos' y 'configuracion' existan en Supabase. Detalle: " + err.message;
+    }
   }
 
   async function cargarDatos() {
-    // 1. Cargar visión
-    const { data: config } = await supabaseClient.from('configuracion').select('*').eq('user_id', usuarioId).single();
-    if(config && config.vision) {
-      document.getElementById('p-vision').value = config.vision;
+    // 1. Cargar visión (usando maybeSingle para que no falle si está vacía)
+    const resConfig = await supabaseClient.from('configuracion').select('*').eq('user_id', usuarioId).maybeSingle();
+    if(resConfig.error) throw new Error("Fallo al leer configuración: " + resConfig.error.message);
+    if(resConfig.data && resConfig.data.vision) {
+      document.getElementById('p-vision').value = resConfig.data.vision;
     }
 
     // 2. Cargar objetivos
-    const { data: objs } = await supabaseClient.from('objetivos').select('*').order('id', { ascending: true });
-    objetivos = objs || [];
+    const resObjs = await supabaseClient.from('objetivos').select('*').order('id', { ascending: true });
+    if(resObjs.error) throw new Error("Fallo al leer objetivos: " + resObjs.error.message);
     
+    objetivos = resObjs.data || [];
     renderPlan();
   }
 
@@ -264,11 +277,11 @@
     const head = `
       <div class="obj-head">
         <div style="flex:1;min-width:0">
-          <div class="periodo">${o.periodo}</div>
+          <div class="periodo">${o.periodo || ''}</div>
           <h3>${o.titulo}</h3>
           ${o.descripcion ? `<p style="font-size:12px; color:var(--muted);">${o.descripcion}</p>` : ''}
         </div>
-        <button class="btn danger" data-del="${o.id}" style="background:transparent; border:1px solid var(--terra); color:var(--terra); padding:4px 8px;">✕</button>
+        <button class="btn danger" data-del="${o.id}" style="background:transparent; border:1px solid var(--terra); color:var(--terra); padding:4px 8px; cursor:pointer;">✕</button>
       </div>
     `;
 
@@ -351,7 +364,6 @@
 
   async function eliminarObjetivo(id) {
     if(!confirm('¿Eliminar este objetivo y sus sub-objetivos?')) return;
-    // Eliminar hijos (recursivo simplificado)
     const aBorrar = [id];
     let añadidos = true;
     while(añadidos) {
@@ -385,8 +397,8 @@
   // ==========================================
   document.getElementById('p-vision-save').addEventListener('click', async () => {
     const vision = document.getElementById('p-vision').value;
-    // Intentar actualizar, si no existe, insertar
-    const { data, error } = await supabaseClient.from('configuracion').upsert({ id: 1, vision, user_id: usuarioId });
+    // Upsert para que lo cree o lo actualice
+    const { error } = await supabaseClient.from('configuracion').upsert({ id: 1, vision, user_id: usuarioId });
     if(error) alert('Error: ' + error.message);
     else alert('Visión guardada en la nube.');
   });
