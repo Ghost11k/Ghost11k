@@ -3,406 +3,438 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plan · Semana</title>
+<title>Plan Quinquenal</title>
 <link rel="stylesheet" href="styles.css">
+<style>
+  /* Estilos del Plan (Brutalista) */
+  .panel-head { border-bottom: 3px solid var(--line); padding-bottom: 18px; margin-bottom: 24px; position: relative; }
+  .panel-head h1 { font-size: 38px; letter-spacing: -0.03em; line-height: 1; margin-bottom: 6px; font-family: Georgia, serif; }
+  .panel-head .tag { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  
+  .plan-map { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; background: var(--bg); border: 2px solid var(--line); margin-bottom: 20px; flex-wrap: wrap; }
+  .plan-map .node { padding: 8px 12px; border: 2px solid var(--line); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-align: center; background: var(--cement); min-width: 76px; }
+  .plan-map .node span { display: block; font-size: 9px; color: var(--muted); margin-top: 2px; font-weight: 500; }
+  .plan-map .arrow { font-size: 14px; color: var(--terra); font-weight: 700; }
+  @media (max-width: 640px) { .plan-map .arrow { transform: rotate(90deg); } }
+
+  .block { background: var(--cement); border: 2px solid var(--line); box-shadow: 6px 6px 0 var(--shadow); padding: 20px; margin-bottom: 20px; position: relative; }
+  .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--line); flex-wrap: wrap; }
+  .section-num { font-size: 11px; letter-spacing: 0.15em; color: var(--terra); font-weight: 700; }
+  .section-title { font-family: Georgia, serif; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; flex: 1; }
+  .section-meta { font-size: 10px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; }
+
+  .vision-textarea { font-family: Georgia, serif; font-size: 18px; line-height: 1.65; font-style: italic; min-height: 140px; padding: 20px; background: var(--bg); border: 2px solid var(--line); color: var(--ink); width: 100%; }
+
+  .parent-filter { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 12px; background: var(--bg); border: 2px dashed var(--line); flex-wrap: wrap; }
+  .parent-filter label { margin: 0; color: var(--terra); font-size: 10px; font-weight: bold; text-transform: uppercase; white-space: nowrap; }
+  .parent-filter select { flex: 1; min-width: 200px; border: 2px solid var(--line); padding: 8px; background: var(--bg); color: var(--ink); font-family: inherit; font-weight: bold; }
+
+  .lista { display: flex; flex-direction: column; gap: 10px; }
+  .obj { padding: 14px 14px 14px 18px; background: var(--bg); border: 2px solid var(--line); position: relative; overflow: hidden; }
+  .obj::before { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: var(--terra); }
+  .obj.hecho::before { background: var(--green); }
+  .obj.hecho h3 { text-decoration: line-through; opacity: 0.6; }
+  .obj-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .obj-head .periodo { font-size: 10px; letter-spacing: 0.15em; color: var(--terra); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+  .obj h3 { font-size: 16px; margin-bottom: 4px; font-family: Georgia, serif; }
+  
+  .barra { height: 12px; background: var(--bg-2, #d4cbb8); border: 2px solid var(--line); overflow: hidden; margin-top: 6px; }
+  .barra span { display: block; height: 100%; background: var(--green); transition: width 0.3s; }
+  .prog-controls { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .prog-controls input[type="range"] { flex: 1; padding: 0; border: none; background: transparent; accent-color: var(--green); }
+  .prog-controls .pct { font-size: 11px; font-weight: 700; min-width: 40px; text-align: right; letter-spacing: 0.05em; }
+  .prog-controls.auto { font-size: 11px; color: var(--muted); font-style: italic; padding: 4px 0; }
+  
+  .vacio { color: var(--muted); font-size: 12px; text-align: center; padding: 20px 0; font-style: italic; font-family: Georgia, serif; }
+</style>
 </head>
 <body>
 
-<!-- PANTALLA DE CARGA (evita que se vea el plan antes de pasar por el login) -->
 <div id="loader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#ede8dc; z-index:9999; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:bold; color:#2a2825;">
-  Cargando sistema...
+  Cargando plan...
 </div>
 
 <main class="contenedor">
-  <nav class="breadcrumb" id="breadcrumb"></nav>
+  <div class="panel-head">
+    <h1>Plan Quinquenal</h1>
+    <div class="tag">Mapa de vida · Visión a 5 años</div>
+  </div>
 
-  <!-- VISTA SEMANA (Inicial) -->
-  <section class="view" id="view-week">
-    <div class="panel-head">
-      <h1>Semana</h1>
-      <div class="tag">Vista semanal · Lunes a viernes</div>
-    </div>
-    <div class="week-nav">
-      <button class="btn ghost" id="week-prev">← Anterior</button>
-      <span class="week-range" id="week-range"></span>
-      <button class="btn ghost" id="week-next">Siguiente →</button>
-    </div>
-    <div class="week-grid" id="week-grid"></div>
-    <div class="block">
-      <div class="section-head">
-        <span class="section-num">01</span>
-        <h2 class="section-title">Objetivos de la semana</h2>
-      </div>
-      <form class="add-form" id="form-week-obj">
-        <input type="text" id="wo-titulo" placeholder="Título del objetivo semanal">
-        <button class="btn green" type="submit">Añadir</button>
-      </form>
-      <div class="lista" id="lista-week-obj"></div>
-    </div>
-  </section>
+  <div class="plan-map">
+    <div class="node">VISIÓN<span>5 años</span></div>
+    <div class="arrow">↓</div>
+    <div class="node">ANUAL<span>1 año</span></div>
+    <div class="arrow">↓</div>
+    <div class="node">TRIMESTRE<span>3 meses</span></div>
+    <div class="arrow">↓</div>
+    <div class="node">MES<span>1 mes</span></div>
+    <div class="arrow">↓</div>
+    <div class="node">SEMANA<span>7 días</span></div>
+  </div>
 
-  <!-- VISTA MES -->
-  <section class="view hidden" id="view-month">
-    <div class="panel-head">
-      <h1>Mes</h1>
-      <div class="tag">Vista mensual</div>
+  <!-- 01 / VISIÓN -->
+  <div class="block">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Visión a 5 años</h2>
     </div>
-    <div class="block">
-      <div class="section-head">
-        <span class="section-num">01</span>
-        <h2 class="section-title">Objetivos del mes</h2>
-      </div>
-      <form class="add-form" id="form-month-obj">
-        <input type="text" id="mo-titulo" placeholder="Título del objetivo mensual">
-        <button class="btn green" type="submit">Añadir</button>
-      </form>
-      <div class="lista" id="lista-month-obj"></div>
+    <label for="p-vision" style="font-size:10px; font-weight:bold; text-transform:uppercase; color:var(--muted); margin-bottom:4px; display:block;">El destino</label>
+    <textarea id="p-vision" class="vision-textarea" placeholder="¿Dónde quieres estar en 5 años? Escribe sin filtros..."></textarea>
+    <div style="margin-top:12px;text-align:right">
+      <button class="btn green" id="p-vision-save">Guardar visión</button>
     </div>
-  </section>
+  </div>
 
-  <!-- VISTA TRIMESTRE -->
-  <section class="view hidden" id="view-quarter">
-    <div class="panel-head">
-      <h1>Trimestre</h1>
-      <div class="tag">Vista trimestral</div>
+  <!-- 02 / ANUAL -->
+  <div class="block">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Objetivos a 1 año</h2>
     </div>
-    <div class="block">
-      <div class="section-head">
-        <span class="section-num">01</span>
-        <h2 class="section-title">Objetivos del trimestre</h2>
-      </div>
-      <form class="add-form" id="form-quarter-obj">
-        <input type="text" id="qo-titulo" placeholder="Título del objetivo trimestral">
-        <button class="btn green" type="submit">Añadir</button>
-      </form>
-      <div class="lista" id="lista-quarter-obj"></div>
-    </div>
-  </section>
+    <form class="add-form" id="form-anual" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+      <input type="text" id="anual-titulo" placeholder="Título del objetivo anual" style="flex:2; min-width:200px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
+      <input type="text" id="anual-periodo" placeholder="Año" value="2026" style="flex:1; max-width:100px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
+      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow);">Añadir</button>
+    </form>
+    <div class="lista" data-lista="anual"></div>
+  </div>
 
-  <!-- VISTA AÑO -->
-  <section class="view hidden" id="view-year">
-    <div class="panel-head">
-      <h1>Año</h1>
-      <div class="tag">Visión y objetivos anuales</div>
+  <!-- 03 / TRIMESTRAL -->
+  <div class="block">
+    <div class="section-head">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Objetivos a 3 meses</h2>
     </div>
-    <div class="block">
-      <div class="section-head">
-        <span class="section-num">01</span>
-        <h2 class="section-title">Visión a 5 años</h2>
-      </div>
-      <textarea id="p-vision" class="vision-textarea" placeholder="¿Dónde quieres estar en 5 años? Escribe sin filtros..."></textarea>
-      <div style="margin-top:12px;text-align:right">
-        <button class="btn green" id="p-vision-save">Guardar visión</button>
-      </div>
+    <div class="parent-filter">
+      <label>Bajo el anual:</label>
+      <select id="sel-anual"></select>
     </div>
-    <div class="block">
-      <div class="section-head">
-        <span class="section-num">02</span>
-        <h2 class="section-title">Objetivos del año</h2>
-      </div>
-      <form class="add-form" id="form-year-obj">
-        <input type="text" id="yo-titulo" placeholder="Título del objetivo anual">
-        <button class="btn green" type="submit">Añadir</button>
-      </form>
-      <div class="lista" id="lista-year-obj"></div>
+    <form class="add-form" id="form-trim" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+      <input type="text" id="trim-titulo" placeholder="Título del objetivo trimestral" style="flex:2; min-width:200px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
+      <select id="trim-periodo" style="flex:1; max-width:120px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
+        <option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option>
+      </select>
+      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow);">Añadir</button>
+    </form>
+    <div class="lista" data-lista="trimestral"></div>
+  </div>
+
+  <!-- 04 / MENSUAL -->
+  <div class="block">
+    <div class="section-head">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Objetivos a 1 mes</h2>
     </div>
-  </section>
+    <div class="parent-filter">
+      <label>Bajo el trimestral:</label>
+      <select id="sel-trim"></select>
+    </div>
+    <form class="add-form" id="form-mes" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+      <input type="text" id="mes-titulo" placeholder="Título del objetivo mensual" style="flex:2; min-width:200px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
+      <select id="mes-periodo" style="flex:1; max-width:140px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
+        <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option><option>Mayo</option><option>Junio</option>
+        <option>Julio</option><option>Agosto</option><option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+      </select>
+      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow);">Añadir</button>
+    </form>
+    <div class="lista" data-lista="mensual"></div>
+  </div>
+
+  <!-- 05 / SEMANAL -->
+  <div class="block">
+    <div class="section-head">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Objetivos semanales</h2>
+    </div>
+    <div class="parent-filter">
+      <label>Bajo el mensual:</label>
+      <select id="sel-mes"></select>
+    </div>
+    <form class="add-form" id="form-sem" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+      <input type="text" id="sem-titulo" placeholder="Título del objetivo semanal" style="flex:2; min-width:200px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
+      <select id="sem-periodo" style="flex:1; max-width:130px; border:2px solid var(--line); padding:10px; background:var(--bg); color:var(--ink);">
+        <option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option>
+      </select>
+      <button class="btn terra" type="submit" style="background:var(--terra); color:white; box-shadow:3px 3px 0 var(--shadow);">Añadir</button>
+    </form>
+    <div class="lista" data-lista="semanal"></div>
+  </div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
-  let datos = { plan: { vision: '', objetivos: [] }, semana: [] };
-  let selectedDate = new Date();
+  let usuarioId = null;
+  let objetivos = [];
+  const planUI = { anual: null, trim: null, mes: null };
+  
+  const NOMBRES_MES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  // ==========================================
-  // 1. COMPROBACIÓN DE SESIÓN (LOGIN)
-  // ==========================================
-  checkUser().then((session) => {
-    if (session) {
-      // Si hay sesión, ocultamos el "Cargando..." y mostramos la app
-      document.getElementById('loader').style.display = 'none';
-      renderBreadcrumb('week');
-      renderWeek();
+  async function init() {
+    document.body.insertAdjacentHTML('beforeend', bottomNavHTML('plan'));
+    const session = await checkUser();
+    if(!session) return;
+    usuarioId = session.user.id;
+
+    await cargarDatos();
+    document.getElementById('loader').style.display = 'none';
+  }
+
+  async function cargarDatos() {
+    // 1. Cargar visión
+    const { data: config } = await supabaseClient.from('configuracion').select('*').eq('user_id', usuarioId).single();
+    if(config && config.vision) {
+      document.getElementById('p-vision').value = config.vision;
     }
-    // Si no hay sesión, checkUser() ya te habrá redirigido a login.html
-  }).catch((error) => {
-    console.error(error);
-    document.getElementById('loader').innerText = 'Error de conexión. Revisa la consola.';
-  });
 
-  // ==========================================
-  // 2. NAVEGACIÓN Y MIGAS DE PAN
-  // ==========================================
-  function renderBreadcrumb(active){
-    const y = selectedDate.getFullYear();
-    const q = getQuarter(selectedDate);
-    const m = NOMBRES_MES[selectedDate.getMonth()];
-    const range = formatWeekRange(getMonday(selectedDate));
-    const items = [
-      { view: 'year', label: String(y) },
-      { view: 'quarter', label: `Q${q}` },
-      { view: 'month', label: m },
-      { view: 'week', label: `Sem ${range}` }
-    ];
-    const bc = document.getElementById('breadcrumb');
-    bc.innerHTML = items.map((it, i) => {
-      const sep = i < items.length - 1 ? '<span class="sep">›</span>' : '';
-      const cls = it.view === active ? 'activo' : '';
-      return `<a href="#" data-view="${it.view}" class="${cls}">${it.label}</a>${sep}`;
-    }).join('');
+    // 2. Cargar objetivos
+    const { data: objs } = await supabaseClient.from('objetivos').select('*').order('id', { ascending: true });
+    objetivos = objs || [];
     
-    bc.querySelectorAll('a').forEach(a => {
-      a.addEventListener('click', e => {
-        e.preventDefault();
-        switchView(a.dataset.view);
-      });
+    renderPlan();
+  }
+
+  // ==========================================
+  // LÓGICA DE RENDERIZADO
+  // ==========================================
+  function renderPlan() {
+    renderListaNivel(1, null, 'anual');
+    renderSelectorAnual();
+    
+    if (planUI.anual) renderListaNivel(2, planUI.anual, 'trimestral');
+    else mostrarVacio('trimestral', 'Selecciona primero un objetivo anual.');
+    
+    renderSelectorTrim();
+    
+    if (planUI.trim) renderListaNivel(3, planUI.trim, 'mensual');
+    else mostrarVacio('mensual', 'Selecciona primero un objetivo trimestral.');
+    
+    renderSelectorMes();
+    
+    if (planUI.mes) renderListaNivel(4, planUI.mes, 'semanal');
+    else mostrarVacio('semanal', 'Selecciona primero un objetivo mensual.');
+  }
+
+  function mostrarVacio(listaId, mensaje) {
+    const $l = document.querySelector(`[data-lista="${listaId}"]`);
+    if ($l) $l.innerHTML = `<p class="vacio">${mensaje}</p>`;
+  }
+
+  function nivelProgress(o) {
+    const hijos = objetivos.filter(h => h.parent_id === o.id);
+    if (hijos.length > 0) {
+      if (o.nivel === 4) {
+        const hechos = hijos.filter(h => h.hecho).length;
+        return Math.round((hechos / hijos.length) * 100);
+      }
+      const sum = hijos.reduce((acc, h) => acc + nivelProgress(h), 0);
+      return Math.round(sum / hijos.length);
+    }
+    return o.progreso || 0;
+  }
+
+  function renderListaNivel(nivel, parentId, listaId) {
+    const $l = document.querySelector(`[data-lista="${listaId}"]`);
+    if (!$l) return;
+
+    const items = objetivos.filter(o => o.nivel === nivel && (o.parent_id === parentId || (!o.parent_id && !parentId)));
+
+    if (!items.length) {
+      $l.innerHTML = '<p class="vacio">Sin objetivos todavía.</p>';
+      return;
+    }
+
+    $l.innerHTML = items.map(o => renderObjetivoHTML(o)).join('');
+
+    // Listeners
+    $l.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => eliminarObjetivo(b.dataset.del)));
+    $l.querySelectorAll('[data-progreso]').forEach(el => {
+      el.addEventListener('change', () => actualizarProgreso(el.dataset.progreso, el.value));
+    });
+    $l.querySelectorAll('[data-toggle-hecho]').forEach(b => {
+      b.addEventListener('click', () => toggleHecho(b.dataset.toggleHecho));
     });
   }
 
-  function switchView(name){
-    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-    document.getElementById('view-' + name).classList.remove('hidden');
-    renderBreadcrumb(name);
-    if(name === 'week') renderWeek();
-    if(name === 'month') renderMonth();
-    if(name === 'quarter') renderQuarter();
-    if(name === 'year') renderYear();
-  }
+  function renderObjetivoHTML(o) {
+    const esSemanal = o.nivel === 4;
+    const tieneHijos = objetivos.some(h => h.parent_id === o.id);
+    const prog = nivelProgress(o);
 
-  // ==========================================
-  // 3. VISTA SEMANA
-  // ==========================================
-  function renderWeek(){
-    const monday = getMonday(selectedDate);
-    document.getElementById('week-range').textContent = formatWeekRange(monday);
-    const grid = document.getElementById('week-grid');
-    const days = [];
-    for(let i = 0; i < 5; i++) days.push(addDays(monday, i));
+    const head = `
+      <div class="obj-head">
+        <div style="flex:1;min-width:0">
+          <div class="periodo">${o.periodo}</div>
+          <h3>${o.titulo}</h3>
+          ${o.descripcion ? `<p style="font-size:12px; color:var(--muted);">${o.descripcion}</p>` : ''}
+        </div>
+        <button class="btn danger" data-del="${o.id}" style="background:transparent; border:1px solid var(--terra); color:var(--terra); padding:4px 8px;">✕</button>
+      </div>
+    `;
 
-    grid.innerHTML = days.map(d => {
-      const f = iso(d);
-      const tasks = datos.semana.filter(t => t.fecha === f);
-      const esHoy = f === hoy();
-      const tareasHTML = tasks.length
-        ? tasks.map(t => `
-            <div class="day-task ${t.hecho ? 'hecho' : ''}">
-              <input type="checkbox" ${t.hecho ? 'checked' : ''} data-toggle="${t.id}">
-              <span class="day-task-text">${esc(t.texto)}</span>
-              <button class="day-task-del" data-del="${t.id}">✕</button>
-            </div>`).join('')
-        : '';
+    if (esSemanal) {
       return `
-        <div class="day-col ${esHoy ? 'hoy' : ''}">
-          <div class="day-header">
-            <span class="day-name">${DIAS_ES_CORTO[d.getDay()]}</span>
-            <span class="day-num">${d.getDate()}</span>
-          </div>
-          <div class="day-tasks">${tareasHTML}</div>
-          <button class="day-add" data-fecha="${f}">+ Añadir</button>
-        </div>`;
-    }).join('');
-
-    grid.querySelectorAll('.day-add').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const texto = prompt('Nueva tarea:');
-        if(!texto || !texto.trim()) return;
-        datos.semana.push({ id: uid(), fecha: btn.dataset.fecha, texto: texto.trim(), hecho: false });
-        renderWeek();
-      });
-    });
-    grid.querySelectorAll('[data-toggle]').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const t = datos.semana.find(x => x.id === cb.dataset.toggle);
-        if(!t) return;
-        t.hecho = cb.checked; renderWeek();
-      });
-    });
-    grid.querySelectorAll('[data-del]').forEach(b => {
-      b.addEventListener('click', () => {
-        if(!confirm('¿Eliminar tarea?')) return;
-        datos.semana = datos.semana.filter(x => x.id !== b.dataset.del);
-        renderWeek();
-      });
-    });
-
-    renderObjetivosSemana(monday);
-  }
-
-  function renderObjetivosSemana(monday){
-    const f = iso(monday);
-    const lista = document.getElementById('lista-week-obj');
-    const objs = datos.plan.objetivos.filter(o => o.nivel === 4 && o.fecha === f);
-    if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos para esta semana.</p>'; return; }
-    lista.innerHTML = objs.map(o => `
-      <div class="obj ${o.hecho ? 'hecho' : ''}">
-        <div class="obj-head">
-          <div style="flex:1"><h3>${o.hecho ? '✓ ' : ''}${esc(o.titulo)}</h3></div>
-          <button class="btn danger" data-del-obj="${o.id}">✕</button>
+        <div class="obj ${o.hecho ? 'hecho' : ''}">
+          ${head}
+          <button class="btn ${o.hecho ? 'green' : ''}" data-toggle-hecho="${o.id}" style="background:${o.hecho ? 'var(--green)' : 'transparent'}; color:${o.hecho ? 'white' : 'var(--ink)'}; border:2px solid var(--line); padding:6px 12px; font-weight:bold; cursor:pointer;">
+            ${o.hecho ? '✓ Completado' : 'Marcar como hecho'}
+          </button>
         </div>
-        <button class="btn ${o.hecho ? 'green' : 'ghost'}" data-toggle-obj="${o.id}">
-          ${o.hecho ? 'Completado' : 'Marcar hecho'}
-        </button>
-      </div>`).join('');
-      
-    lista.querySelectorAll('[data-del-obj]').forEach(b => {
-      b.addEventListener('click', () => {
-        if(!confirm('¿Eliminar?')) return;
-        datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.delObj);
-        renderObjetivosSemana(monday);
-      });
-    });
-    lista.querySelectorAll('[data-toggle-obj]').forEach(b => {
-      b.addEventListener('click', () => {
-        const o = datos.plan.objetivos.find(x => x.id === b.dataset.toggleObj);
-        if(!o) return;
-        o.hecho = !o.hecho; renderObjetivosSemana(monday);
-      });
-    });
+      `;
+    }
+
+    const progresoUI = tieneHijos
+      ? `<div class="prog-controls auto">Auto · ${prog}% (${objetivos.filter(h => h.parent_id === o.id).length} sub-objetivos)</div>`
+      : `<div class="prog-controls">
+           <input type="range" min="0" max="100" step="5" value="${o.progreso || 0}" data-progreso="${o.id}">
+           <span class="pct">${prog}%</span>
+         </div>`;
+
+    return `
+      <div class="obj ${prog >= 100 ? 'hecho' : ''}">
+        ${head}
+        <div class="barra"><span style="width:${prog}%"></span></div>
+        ${progresoUI}
+      </div>
+    `;
+  }
+
+  function renderSelectorAnual() {
+    const sel = document.getElementById('sel-anual');
+    const anuales = objetivos.filter(o => o.nivel === 1);
+    if (!anuales.length) {
+      sel.innerHTML = '<option value="">— sin objetivos anuales —</option>';
+      sel.disabled = true; planUI.anual = null; return;
+    }
+    sel.disabled = false;
+    sel.innerHTML = anuales.map(a => `<option value="${a.id}">${a.periodo} · ${a.titulo}</option>`).join('');
+    if (!planUI.anual || !anuales.find(a => a.id == planUI.anual)) planUI.anual = anuales[0].id;
+    sel.value = planUI.anual;
+  }
+
+  function renderSelectorTrim() {
+    const sel = document.getElementById('sel-trim');
+    const trims = objetivos.filter(o => o.nivel === 2 && o.parent_id == planUI.anual);
+    if (!trims.length) {
+      sel.innerHTML = '<option value="">— sin objetivos trimestrales —</option>';
+      sel.disabled = true; planUI.trim = null; return;
+    }
+    sel.disabled = false;
+    sel.innerHTML = trims.map(t => `<option value="${t.id}">${t.periodo} · ${t.titulo}</option>`).join('');
+    if (!planUI.trim || !trims.find(t => t.id == planUI.trim)) planUI.trim = trims[0].id;
+    sel.value = planUI.trim;
+  }
+
+  function renderSelectorMes() {
+    const sel = document.getElementById('sel-mes');
+    const meses = objetivos.filter(o => o.nivel === 3 && o.parent_id == planUI.trim);
+    if (!meses.length) {
+      sel.innerHTML = '<option value="">— sin objetivos mensuales —</option>';
+      sel.disabled = true; planUI.mes = null; return;
+    }
+    sel.disabled = false;
+    sel.innerHTML = meses.map(m => `<option value="${m.id}">${m.periodo} · ${m.titulo}</option>`).join('');
+    if (!planUI.mes || !meses.find(m => m.id == planUI.mes)) planUI.mes = meses[0].id;
+    sel.value = planUI.mes;
   }
 
   // ==========================================
-  // 4. VISTA MES
+  // ACCIONES EN SUPABASE
   // ==========================================
-  function renderMonth(){
-    const y = selectedDate.getFullYear();
-    const m = selectedDate.getMonth() + 1;
-    const prefix = `${y}-${String(m).padStart(2,'0')}-`;
-    const lista = document.getElementById('lista-month-obj');
-    const objs = datos.plan.objetivos.filter(o => o.nivel === 3 && o.fecha.startsWith(prefix));
-    if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos para este mes.</p>'; return; }
-    lista.innerHTML = objs.map(o => `
-      <div class="obj">
-        <div class="obj-head">
-          <div style="flex:1"><h3>${esc(o.titulo)}</h3></div>
-          <button class="btn danger" data-del="${o.id}">✕</button>
-        </div>
-      </div>`).join('');
-    lista.querySelectorAll('[data-del]').forEach(b => {
-      b.addEventListener('click', () => {
-        if(!confirm('¿Eliminar?')) return;
-        datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.del);
-        renderMonth();
+  async function agregarObjetivo(nivel, parentId, periodo, titulo) {
+    const { error } = await supabaseClient.from('objetivos').insert([{
+      nivel, parent_id: parentId, periodo, titulo, descripcion: '', progreso: 0, hecho: false, user_id: usuarioId
+    }]);
+    if(error) alert('Error: ' + error.message);
+    else await cargarDatos();
+  }
+
+  async function eliminarObjetivo(id) {
+    if(!confirm('¿Eliminar este objetivo y sus sub-objetivos?')) return;
+    // Eliminar hijos (recursivo simplificado)
+    const aBorrar = [id];
+    let añadidos = true;
+    while(añadidos) {
+      añadidos = false;
+      objetivos.forEach(o => {
+        if (o.parent_id && aBorrar.includes(o.parent_id) && !aBorrar.includes(o.id)) {
+          aBorrar.push(o.id); añadidos = true;
+        }
       });
-    });
+    }
+    
+    const { error } = await supabaseClient.from('objetivos').delete().in('id', aBorrar);
+    if(error) alert('Error: ' + error.message);
+    else await cargarDatos();
+  }
+
+  async function actualizarProgreso(id, nuevoProgreso) {
+    const { error } = await supabaseClient.from('objetivos').update({ progreso: Number(nuevoProgreso) }).eq('id', id);
+    if(!error) await cargarDatos();
+  }
+
+  async function toggleHecho(id) {
+    const obj = objetivos.find(o => o.id == id);
+    const nuevoEstado = !obj.hecho;
+    const { error } = await supabaseClient.from('objetivos').update({ hecho: nuevoEstado, progreso: nuevoEstado ? 100 : obj.progreso }).eq('id', id);
+    if(!error) await cargarDatos();
   }
 
   // ==========================================
-  // 5. VISTA TRIMESTRE
+  // EVENTOS DE FORMULARIOS
   // ==========================================
-  function renderQuarter(){
-    const y = selectedDate.getFullYear();
-    const q = getQuarter(selectedDate);
-    const startMonth = (q - 1) * 3 + 1;
-    const endMonth = q * 3;
-    const lista = document.getElementById('lista-quarter-obj');
-    const objs = datos.plan.objetivos.filter(o => {
-      if(o.nivel !== 2) return false;
-      const [oy, om] = o.fecha.split('-').map(Number);
-      return oy === y && om >= startMonth && om <= endMonth;
-    });
-    if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos para este trimestre.</p>'; return; }
-    lista.innerHTML = objs.map(o => `
-      <div class="obj">
-        <div class="obj-head">
-          <div style="flex:1"><h3>${esc(o.titulo)}</h3></div>
-          <button class="btn danger" data-del="${o.id}">✕</button>
-        </div>
-      </div>`).join('');
-    lista.querySelectorAll('[data-del]').forEach(b => {
-      b.addEventListener('click', () => {
-        if(!confirm('¿Eliminar?')) return;
-        datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.del);
-        renderQuarter();
-      });
-    });
-  }
-
-  // ==========================================
-  // 6. VISTA AÑO
-  // ==========================================
-  function renderYear(){
-    document.getElementById('p-vision').value = datos.plan.vision || '';
-    const y = selectedDate.getFullYear();
-    const lista = document.getElementById('lista-year-obj');
-    const objs = datos.plan.objetivos.filter(o => o.nivel === 1 && o.fecha.startsWith(y + '-'));
-    if(!objs.length){ lista.innerHTML = '<p class="vacio">Sin objetivos anuales.</p>'; return; }
-    lista.innerHTML = objs.map(o => `
-      <div class="obj">
-        <div class="obj-head">
-          <div style="flex:1"><h3>${esc(o.titulo)}</h3></div>
-          <button class="btn danger" data-del="${o.id}">✕</button>
-        </div>
-      </div>`).join('');
-    lista.querySelectorAll('[data-del]').forEach(b => {
-      b.addEventListener('click', () => {
-        if(!confirm('¿Eliminar?')) return;
-        datos.plan.objetivos = datos.plan.objetivos.filter(x => x.id !== b.dataset.del);
-        renderYear();
-      });
-    });
-  }
-
-  // ==========================================
-  // 7. BOTONES Y FORMULARIOS
-  // ==========================================
-  document.getElementById('week-prev').addEventListener('click', () => {
-    selectedDate = addDays(selectedDate, -7); renderBreadcrumb('week'); renderWeek();
-  });
-  document.getElementById('week-next').addEventListener('click', () => {
-    selectedDate = addDays(selectedDate, 7); renderBreadcrumb('week'); renderWeek();
+  document.getElementById('p-vision-save').addEventListener('click', async () => {
+    const vision = document.getElementById('p-vision').value;
+    // Intentar actualizar, si no existe, insertar
+    const { data, error } = await supabaseClient.from('configuracion').upsert({ id: 1, vision, user_id: usuarioId });
+    if(error) alert('Error: ' + error.message);
+    else alert('Visión guardada en la nube.');
   });
 
-  document.getElementById('form-week-obj').addEventListener('submit', e => {
+  document.getElementById('form-anual').addEventListener('submit', (e) => {
     e.preventDefault();
-    const t = document.getElementById('wo-titulo').value.trim();
+    const t = document.getElementById('anual-titulo').value.trim();
+    const p = document.getElementById('anual-periodo').value.trim() || String(new Date().getFullYear());
     if(!t) return;
-    datos.plan.objetivos.push({ id: uid(), nivel: 4, fecha: iso(getMonday(selectedDate)), titulo: t, descripcion: '', hecho: false });
-    document.getElementById('wo-titulo').value = '';
-    renderWeek();
+    agregarObjetivo(1, null, p, t);
+    document.getElementById('anual-titulo').value = '';
   });
 
-  document.getElementById('form-month-obj').addEventListener('submit', e => {
+  document.getElementById('form-trim').addEventListener('submit', (e) => {
     e.preventDefault();
-    const t = document.getElementById('mo-titulo').value.trim();
+    if(!planUI.anual) return alert('Selecciona un objetivo anual.');
+    const t = document.getElementById('trim-titulo').value.trim();
+    const p = document.getElementById('trim-periodo').value;
     if(!t) return;
-    const y = selectedDate.getFullYear();
-    const m = String(selectedDate.getMonth() + 1).padStart(2,'0');
-    datos.plan.objetivos.push({ id: uid(), nivel: 3, fecha: `${y}-${m}-01`, titulo: t, descripcion: '' });
-    document.getElementById('mo-titulo').value = '';
-    renderMonth();
+    agregarObjetivo(2, planUI.anual, p, t);
+    document.getElementById('trim-titulo').value = '';
   });
 
-  document.getElementById('form-quarter-obj').addEventListener('submit', e => {
+  document.getElementById('form-mes').addEventListener('submit', (e) => {
     e.preventDefault();
-    const t = document.getElementById('qo-titulo').value.trim();
+    if(!planUI.trim) return alert('Selecciona un objetivo trimestral.');
+    const t = document.getElementById('mes-titulo').value.trim();
+    const p = document.getElementById('mes-periodo').value;
     if(!t) return;
-    const y = selectedDate.getFullYear();
-    const q = getQuarter(selectedDate);
-    const startMonth = String((q - 1) * 3 + 1).padStart(2,'0');
-    datos.plan.objetivos.push({ id: uid(), nivel: 2, fecha: `${y}-${startMonth}-01`, titulo: t, descripcion: '' });
-    document.getElementById('qo-titulo').value = '';
-    renderQuarter();
+    agregarObjetivo(3, planUI.trim, p, t);
+    document.getElementById('mes-titulo').value = '';
   });
 
-  document.getElementById('form-year-obj').addEventListener('submit', e => {
+  document.getElementById('form-sem').addEventListener('submit', (e) => {
     e.preventDefault();
-    const t = document.getElementById('yo-titulo').value.trim();
+    if(!planUI.mes) return alert('Selecciona un objetivo mensual.');
+    const t = document.getElementById('sem-titulo').value.trim();
+    const p = document.getElementById('sem-periodo').value;
     if(!t) return;
-    const y = selectedDate.getFullYear();
-    datos.plan.objetivos.push({ id: uid(), nivel: 1, fecha: `${y}-01-01`, titulo: t, descripcion: '' });
-    document.getElementById('yo-titulo').value = '';
-    renderYear();
+    agregarObjetivo(4, planUI.mes, p, t);
+    document.getElementById('sem-titulo').value = '';
   });
 
-  document.getElementById('p-vision-save').addEventListener('click', () => {
-    datos.plan.vision = document.getElementById('p-vision').value;
-    alert('Visión guardada localmente (pendiente conectar a base de datos).');
-  });
+  document.getElementById('sel-anual').addEventListener('change', e => { planUI.anual = e.target.value; planUI.trim = null; planUI.mes = null; renderPlan(); });
+  document.getElementById('sel-trim').addEventListener('change', e => { planUI.trim = e.target.value; planUI.mes = null; renderPlan(); });
+  document.getElementById('sel-mes').addEventListener('change', e => { planUI.mes = e.target.value; renderPlan(); });
 
-  // Insertar menú inferior
-  document.body.insertAdjacentHTML('beforeend', bottomNavHTML('plan'));
-
+  init();
 </script>
 </body>
 </html>
