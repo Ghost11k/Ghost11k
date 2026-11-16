@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vista General</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Estilos del Dashboard Brutalista */
+  .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; }
+  .card { background: var(--cement); border: 2px solid var(--line); box-shadow: 6px 6px 0 var(--shadow); padding: 20px; display: flex; flex-direction: column; }
+  .card.bg-paper { background: var(--bg); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--line); padding-bottom: 10px; margin-bottom: 15px; }
+  .card-title { font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; color: var(--terra); }
+  .card-link { color: var(--ink); text-decoration: none; font-size: 14px; font-weight: bold; }
+  .card-link:hover { color: var(--green); }
+
+  .col-3 { grid-column: span 3; }
+  .col-4 { grid-column: span 4; }
+  .col-8 { grid-column: span 8; }
+  .col-12 { grid-column: span 12; }
+  @media (max-width: 900px) { .col-3, .col-4, .col-8, .col-12 { grid-column: span 12; } }
+
+  .stat-card { flex-direction: row; align-items: center; gap: 15px; padding: 15px; }
+  .stat-icon { font-size: 28px; background: var(--bg); border: 2px solid var(--line); padding: 8px; box-shadow: 2px 2px 0 var(--shadow); }
+  .stat-info h3 { font-family: Georgia, serif; font-size: 22px; font-weight: bold; line-height: 1; margin-bottom: 4px; }
+  .stat-info p { font-size: 10px; text-transform: uppercase; font-weight: bold; color: var(--muted); letter-spacing: 0.1em; }
+
+  .habit-list { display: flex; flex-direction: column; gap: 12px; }
+  .habit-item { display: flex; align-items: center; gap: 12px; }
+  .habit-check { width: 22px; height: 22px; border: 2px solid var(--line); background: var(--bg); display: flex; align-items: center; justify-content: center; }
+  .habit-check.done { background: var(--green); color: var(--bg); }
+  .habit-check.done::after { content: '✓'; font-weight: bold; font-size: 16px; }
+  .habit-name { font-size: 14px; font-weight: bold; }
+  .habit-name.done { text-decoration: line-through; opacity: 0.6; }
+
+  .project-block { margin-bottom: 20px; }
+  .project-title { font-family: Georgia, serif; font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+  .project-sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  
+  .progress-container { margin-top: 10px; }
+  .progress-text { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .progress-bar { height: 18px; background: var(--bg); border: 2px solid var(--line); display: flex; }
+  .progress-fill { height: 100%; background: var(--green); border-right: 2px solid var(--line); transition: width 0.5s; }
+  .progress-fill.terra { background: var(--terra); }
+  .progress-fill.dark { background: var(--ink); }
+
+  .objetivo-mini-title { font-size: 15px; font-weight: bold; font-family: Georgia, serif; margin-bottom: 5px; }
+  .objetivo-mini-desc { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div id="loader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#ede8dc; z-index:9999; display:flex; align-items:center; justify-content:center; font-family:monospace; font-weight:bold; color:#2a2825;">
+  Cargando panel...
+</div>
+
+<main class="contenedor">
+  <header style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid var(--line); padding-bottom: 18px; margin-bottom: 30px;">
+    <div class="header-text">
+      <h1 style="font-family: Georgia, serif; font-size: 36px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.03em;">Mi Panel.</h1>
+      <p id="fecha-hoy" style="color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: bold;"></p>
+    </div>
+    <div class="avatar" style="width: 50px; height: 50px; background: var(--green); color: var(--bg); border: 2px solid var(--line); box-shadow: 3px 3px 0 var(--shadow); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; font-family: Georgia, serif;">
+      U
+    </div>
+  </header>
+
+  <div class="dashboard-grid">
+    
+    <!-- ESTADÍSTICAS -->
+    <div class="card stat-card col-3 bg-paper">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-info">
+        <h3 id="stat-racha">0</h3>
+        <p>Racha actual</p>
+      </div>
+    </div>
+    <div class="card stat-card col-3">
+      <div class="stat-icon">✅</div>
+      <div class="stat-info">
+        <h3 id="stat-habitos">0/0</h3>
+        <p>Hábitos hoy</p>
+      </div>
+    </div>
+    <div class="card stat-card col-3 bg-paper">
+      <div class="stat-icon">✍️</div>
+      <div class="stat-info">
+        <h3 id="stat-paginas">0</h3>
+        <p>Páginas escritas</p>
+      </div>
+    </div>
+    <div class="card stat-card col-3">
+      <div class="stat-icon">📚</div>
+      <div class="stat-info">
+        <h3 id="stat-libros">0</h3>
+        <p>Leyendo ahora</p>
+      </div>
+    </div>
+
+    <!-- HÁBITOS (Hoy) -->
+    <div class="card col-4 bg-paper">
+      <div class="card-header">
+        <div class="card-title">✅ Hábitos de hoy</div>
+        <a href="habitos.html" class="card-link">→</a>
+      </div>
+      <div class="habit-list" id="lista-habitos">
+        <p class="vacio" style="font-size:12px;">Cargando...</p>
+      </div>
+    </div>
+
+    <!-- PROYECTO DE ESCRITURA ACTUAL -->
+    <div class="card col-8">
+      <div class="card-header">
+        <div class="card-title">✍️ Proyecto de escritura</div>
+        <a href="biblioteca.html" class="card-link">Abrir →</a>
+      </div>
+      <div id="card-escritura">
+        <p class="vacio">No hay proyectos activos.</p>
+      </div>
+    </div>
+
+    <!-- LIBRO ACTUAL -->
+    <div class="card col-12 bg-paper">
+      <div class="card-header">
+        <div class="card-title">📚 Libro actual</div>
+        <a href="biblioteca.html" class="card-link">Ver biblioteca →</a>
+      </div>
+      <div id="card-libro">
+        <p class="vacio">No estás leyendo ningún libro.</p>
+      </div>
+    </div>
+
+    <!-- OBJETIVOS TEMPORALES (Plan) -->
+    <div class="card col-4">
+      <div class="card-header">
+        <div class="card-title">🔥 Esta semana</div>
+        <a href="plan.html" class="card-link">→</a>
+      </div>
+      <div id="card-semanal"></div>
+    </div>
+
+    <div class="card col-4 bg-paper">
+      <div class="card-header">
+        <div class="card-title" style="color:var(--terra);">📅 Este mes</div>
+        <a href="plan.html" class="card-link">→</a>
+      </div>
+      <div id="card-mensual"></div>
+    </div>
+
+    <div class="card col-4">
+      <div class="card-header">
+        <div class="card-title" style="color:var(--muted);">🎯 Este año</div>
+        <a href="plan.html" class="card-link">→</a>
+      </div>
+      <div id="card-anual"></div>
+    </div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+  const escapeHTML = (str) => String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  async function initDashboard() {
+    document.body.insertAdjacentHTML('beforeend', bottomNavHTML('dashboard'));
+    
+    // Configurar fecha
+    const hoyDate = new Date();
+    const opciones = { weekday: 'long', day: 'numeric', month: 'long' };
+    document.getElementById('fecha-hoy').innerText = hoyDate.toLocaleDateString('es-ES', opciones);
+    
+    const session = await checkUser();
+    if(!session) return;
+
+    // 1. Cargar Datos desde Supabase (Hábitos)
+    const { data: habitos } = await supabaseClient.from('habitos').select('*');
+    
+    // 2. Cargar Datos desde LocalStorage (Biblioteca y Plan)
+    let biblioteca = { proyectos: [], libros: [] };
+    try { biblioteca = JSON.parse(localStorage.getItem('biblioteca_datos_v3')) || biblioteca; } catch(e) {}
+    
+    let plan = { objetivos: [] };
+    try { plan = JSON.parse(localStorage.getItem('mi-organizacion-v1'))?.plan || plan; } catch(e) {}
+
+    document.getElementById('loader').style.display = 'none';
+
+    // ==========================================
+    // RENDERIZAR HÁBITOS Y ESTADÍSTICAS
+    // ==========================================
+    const hoyISO = hoyDate.toISOString().split('T')[0];
+    const cardHabitos = document.getElementById('lista-habitos');
+    
+    if (habitos && habitos.length > 0) {
+      let completadosHoy = 0;
+      
+      cardHabitos.innerHTML = habitos.slice(0, 5).map(h => {
+        const hecho = h.dias && h.dias[hoyISO];
+        if (hecho) completadosHoy++;
+        return `
+          <div class="habit-item">
+            <div class="habit-check ${hecho ? 'done' : ''}"></div>
+            <div class="habit-name ${hecho ? 'done' : ''}">${escapeHTML(h.nombre)}</div>
+          </div>
+        `;
+      }).join('');
+      
+      document.getElementById('stat-habitos').innerText = `${completadosHoy}/${habitos.length}`;
+      
+      // Calcular racha simple (basada en el primer hábito)
+      let racha = 0;
+      const primerHabito = habitos[0];
+      if(primerHabito && primerHabito.dias) {
+        let d = new Date();
+        if(!primerHabito.dias[hoyISO]) d.setDate(d.getDate() - 1);
+        while(primerHabito.dias[d.toISOString().split('T')[0]]) {
+          racha++;
+          d.setDate(d.getDate() - 1);
+        }
+      }
+      document.getElementById('stat-racha').innerText = `${racha} Días`;
+    }
+
+    // ==========================================
+    // RENDERIZAR ESCRITURA Y LIBROS
+    // ==========================================
+    const cardEscritura = document.getElementById('card-escritura');
+    let paginasTotales = 0;
+
+    if (biblioteca.proyectos && biblioteca.proyectos.length > 0) {
+      const proy = biblioteca.proyectos[biblioteca.proyectos.length - 1];
+      paginasTotales = proy.paginas ? proy.paginas.length : 0;
+      
+      // Simulamos un objetivo de 50,000 palabras o 100 páginas
+      const progreso = Math.min(Math.round((paginasTotales / 50) * 100), 100);
+      
+      cardEscritura.innerHTML = `
+        <div class="project-block">
+          <div class="project-title">${escapeHTML(proy.titulo)}</div>
+          <div class="project-sub">Páginas escritas: ${paginasTotales}</div>
+          <div class="progress-container">
+            <div class="progress-text">
+              <span>Progreso (Meta: 50 pág)</span>
+              <span>${progreso}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${progreso}%;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    document.getElementById('stat-paginas').innerText = paginasTotales;
+
+    const cardLibro = document.getElementById('card-libro');
+    const libroLeyendo = biblioteca.libros?.find(l => l.estado === 'leyendo');
+    
+    if (libroLeyendo) {
+      document.getElementById('stat-libros').innerText = "1";
+      cardLibro.innerHTML = `
+        <div class="project-block">
+          <div class="project-title">${escapeHTML(libroLeyendo.titulo)}</div>
+          <div class="project-sub">${escapeHTML(libroLeyendo.autor || 'Autor desconocido')}</div>
+          <!-- Como no tenemos número de páginas, ponemos una barra visual al 50% -->
+          <div class="progress-container">
+            <div class="progress-text"><span>En curso</span><span>Leyendo</span></div>
+            <div class="progress-bar"><div class="progress-fill terra" style="width: 50%;"></div></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // RENDERIZAR OBJETIVOS (Plan)
+    // ==========================================
+    function renderObjetivo(idContenedor, nivel, colorClase) {
+      const cont = document.getElementById(idContenedor);
+      const objetivos = plan.objetivos?.filter(o => o.nivel === nivel) || [];
+      
+      if (objetivos.length > 0) {
+        const o = objetivos[objetivos.length - 1]; // El último creado
+        const prog = o.progreso || (o.hecho ? 100 : 0);
+        cont.innerHTML = `
+          <div class="objetivo-mini-title">${escapeHTML(o.titulo)}</div>
+          <div class="objetivo-mini-desc">${o.periodo || 'Sin fecha'}</div>
+          <div class="progress-container" style="margin-top:auto;">
+            <div class="progress-text"><span>Completado</span><span>${prog}%</span></div>
+            <div class="progress-bar"><div class="progress-fill ${colorClase}" style="width: ${prog}%;"></div></div>
+          </div>
+        `;
+      } else {
+        cont.innerHTML = `<p class="vacio" style="font-size:12px;">Sin objetivos.</p>`;
+      }
+    }
+
+    renderObjetivo('card-semanal', 4, '');         // Nivel 4 = Semanal (Verde)
+    renderObjetivo('card-mensual', 3, 'terra');    // Nivel 3 = Mensual (Terracota)
+    renderObjetivo('card-anual', 1, 'dark');       // Nivel 1 = Anual (Oscuro)
+  }
+
+  initDashboard();
+</script>
+</body>
+</html>
