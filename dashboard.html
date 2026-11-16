@@ -47,6 +47,7 @@
 
   .objetivo-mini-title { font-size: 15px; font-weight: bold; font-family: Georgia, serif; margin-bottom: 5px; }
   .objetivo-mini-desc { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .vacio { text-align: center; font-style: italic; color: var(--muted); font-family: Georgia, serif; padding: 10px 0; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -105,7 +106,7 @@
         <a href="habitos.html" class="card-link">→</a>
       </div>
       <div class="habit-list" id="lista-habitos">
-        <p class="vacio" style="font-size:12px;">Cargando...</p>
+        <p class="vacio">Cargando...</p>
       </div>
     </div>
 
@@ -137,7 +138,7 @@
         <div class="card-title">🔥 Esta semana</div>
         <a href="plan.html" class="card-link">→</a>
       </div>
-      <div id="card-semanal"></div>
+      <div id="card-semanal"><p class="vacio">Cargando...</p></div>
     </div>
 
     <div class="card col-4 bg-paper">
@@ -145,7 +146,7 @@
         <div class="card-title" style="color:var(--terra);">📅 Este mes</div>
         <a href="plan.html" class="card-link">→</a>
       </div>
-      <div id="card-mensual"></div>
+      <div id="card-mensual"><p class="vacio">Cargando...</p></div>
     </div>
 
     <div class="card col-4">
@@ -153,7 +154,7 @@
         <div class="card-title" style="color:var(--muted);">🎯 Este año</div>
         <a href="plan.html" class="card-link">→</a>
       </div>
-      <div id="card-anual"></div>
+      <div id="card-anual"><p class="vacio">Cargando...</p></div>
     </div>
 
   </div>
@@ -175,129 +176,140 @@
     const session = await checkUser();
     if(!session) return;
 
-    // 1. Cargar Datos desde Supabase (Hábitos)
-    const { data: habitos } = await supabaseClient.from('habitos').select('*');
-    
-    // 2. Cargar Datos desde LocalStorage (Biblioteca y Plan)
-    let biblioteca = { proyectos: [], libros: [] };
-    try { biblioteca = JSON.parse(localStorage.getItem('biblioteca_datos_v3')) || biblioteca; } catch(e) {}
-    
-    let plan = { objetivos: [] };
-    try { plan = JSON.parse(localStorage.getItem('mi-organizacion-v1'))?.plan || plan; } catch(e) {}
-
-    document.getElementById('loader').style.display = 'none';
-
     // ==========================================
-    // RENDERIZAR HÁBITOS Y ESTADÍSTICAS
+    // PETICIONES A SUPABASE (EN PARALELO)
     // ==========================================
-    const hoyISO = hoyDate.toISOString().split('T')[0];
-    const cardHabitos = document.getElementById('lista-habitos');
-    
-    if (habitos && habitos.length > 0) {
-      let completadosHoy = 0;
+    try {
+      const [resHabitos, resObjetivos, resLibros, resProyectos] = await Promise.all([
+        supabaseClient.from('habitos').select('*'),
+        supabaseClient.from('objetivos').select('*'),
+        supabaseClient.from('libros').select('*').eq('estado', 'leyendo').limit(1),
+        supabaseClient.from('proyectos').select('*').order('created_at', { ascending: false }).limit(1)
+      ]);
+
+      document.getElementById('loader').style.display = 'none';
+
+      const habitos = resHabitos.data || [];
+      const objetivos = resObjetivos.data || [];
+      const libros = resLibros.data || [];
+      const proyectos = resProyectos.data || [];
+
+      // ==========================================
+      // 1. RENDERIZAR HÁBITOS Y RACHA
+      // ==========================================
+      const hoyISO = hoyDate.toISOString().split('T')[0];
+      const cardHabitos = document.getElementById('lista-habitos');
       
-      cardHabitos.innerHTML = habitos.slice(0, 5).map(h => {
-        const hecho = h.dias && h.dias[hoyISO];
-        if (hecho) completadosHoy++;
-        return `
-          <div class="habit-item">
-            <div class="habit-check ${hecho ? 'done' : ''}"></div>
-            <div class="habit-name ${hecho ? 'done' : ''}">${escapeHTML(h.nombre)}</div>
+      if (habitos.length > 0) {
+        let completadosHoy = 0;
+        
+        cardHabitos.innerHTML = habitos.slice(0, 5).map(h => {
+          const hecho = h.dias && h.dias[hoyISO];
+          if (hecho) completadosHoy++;
+          return `
+            <div class="habit-item">
+              <div class="habit-check ${hecho ? 'done' : ''}"></div>
+              <div class="habit-name ${hecho ? 'done' : ''}">${escapeHTML(h.nombre)}</div>
+            </div>
+          `;
+        }).join('');
+        
+        document.getElementById('stat-habitos').innerText = `${completadosHoy}/${habitos.length}`;
+        
+        // Calcular racha
+        let racha = 0;
+        const primerHabito = habitos[0];
+        if(primerHabito && primerHabito.dias) {
+          let d = new Date();
+          if(!primerHabito.dias[hoyISO]) d.setDate(d.getDate() - 1);
+          while(primerHabito.dias[d.toISOString().split('T')[0]]) {
+            racha++;
+            d.setDate(d.getDate() - 1);
+          }
+        }
+        document.getElementById('stat-racha').innerText = `${racha} Días`;
+      } else {
+        cardHabitos.innerHTML = '<p class="vacio">Sin hábitos.</p>';
+      }
+
+      // ==========================================
+      // 2. RENDERIZAR ESCRITURA
+      // ==========================================
+      const cardEscritura = document.getElementById('card-escritura');
+      if (proyectos.length > 0) {
+        const proy = proyectos[0];
+        const paginasTotales = proy.paginas ? proy.paginas.length : 0;
+        const progreso = Math.min(Math.round((paginasTotales / 50) * 100), 100); // Meta: 50 páginas
+        
+        cardEscritura.innerHTML = `
+          <div class="project-block">
+            <div class="project-title">${escapeHTML(proy.titulo)}</div>
+            <div class="project-sub">Páginas escritas: ${paginasTotales}</div>
+            <div class="progress-container">
+              <div class="progress-text">
+                <span>Progreso (Meta: 50 pág)</span>
+                <span>${progreso}%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${progreso}%;"></div>
+              </div>
+            </div>
           </div>
         `;
-      }).join('');
-      
-      document.getElementById('stat-habitos').innerText = `${completadosHoy}/${habitos.length}`;
-      
-      // Calcular racha simple (basada en el primer hábito)
-      let racha = 0;
-      const primerHabito = habitos[0];
-      if(primerHabito && primerHabito.dias) {
-        let d = new Date();
-        if(!primerHabito.dias[hoyISO]) d.setDate(d.getDate() - 1);
-        while(primerHabito.dias[d.toISOString().split('T')[0]]) {
-          racha++;
-          d.setDate(d.getDate() - 1);
+        document.getElementById('stat-paginas').innerText = paginasTotales;
+      }
+
+      // ==========================================
+      // 3. RENDERIZAR LIBRO ACTUAL
+      // ==========================================
+      const cardLibro = document.getElementById('card-libro');
+      if (libros.length > 0) {
+        const libro = libros[0];
+        document.getElementById('stat-libros').innerText = "1";
+        cardLibro.innerHTML = `
+          <div class="project-block">
+            <div class="project-title">${escapeHTML(libro.titulo)}</div>
+            <div class="project-sub">${escapeHTML(libro.autor || 'Autor desconocido')}</div>
+            <div class="progress-container">
+              <div class="progress-text"><span>En curso</span><span>Leyendo</span></div>
+              <div class="progress-bar"><div class="progress-fill terra" style="width: 50%;"></div></div>
+            </div>
+          </div>
+        `;
+      }
+
+      // ==========================================
+      // 4. RENDERIZAR OBJETIVOS (Plan)
+      // ==========================================
+      function renderObjetivo(idContenedor, nivel, colorClase) {
+        const cont = document.getElementById(idContenedor);
+        const objsFiltrados = objetivos.filter(o => o.nivel === nivel);
+        
+        if (objsFiltrados.length > 0) {
+          // Coger el más reciente
+          const o = objsFiltrados.sort((a,b) => b.id - a.id)[0];
+          const prog = o.progreso || (o.hecho ? 100 : 0);
+          cont.innerHTML = `
+            <div class="objetivo-mini-title">${escapeHTML(o.titulo)}</div>
+            <div class="objetivo-mini-desc">${o.fecha || 'Sin fecha'}</div>
+            <div class="progress-container" style="margin-top:auto;">
+              <div class="progress-text"><span>Completado</span><span>${prog}%</span></div>
+              <div class="progress-bar"><div class="progress-fill ${colorClase}" style="width: ${prog}%;"></div></div>
+            </div>
+          `;
+        } else {
+          cont.innerHTML = `<p class="vacio">Sin objetivos.</p>`;
         }
       }
-      document.getElementById('stat-racha').innerText = `${racha} Días`;
+
+      renderObjetivo('card-semanal', 4, '');         // Nivel 4 = Semanal (Verde)
+      renderObjetivo('card-mensual', 3, 'terra');    // Nivel 3 = Mensual (Terracota)
+      renderObjetivo('card-anual', 1, 'dark');       // Nivel 1 = Anual (Oscuro)
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById('loader').innerText = "Error al conectar con la base de datos.";
     }
-
-    // ==========================================
-    // RENDERIZAR ESCRITURA Y LIBROS
-    // ==========================================
-    const cardEscritura = document.getElementById('card-escritura');
-    let paginasTotales = 0;
-
-    if (biblioteca.proyectos && biblioteca.proyectos.length > 0) {
-      const proy = biblioteca.proyectos[biblioteca.proyectos.length - 1];
-      paginasTotales = proy.paginas ? proy.paginas.length : 0;
-      
-      // Simulamos un objetivo de 50,000 palabras o 100 páginas
-      const progreso = Math.min(Math.round((paginasTotales / 50) * 100), 100);
-      
-      cardEscritura.innerHTML = `
-        <div class="project-block">
-          <div class="project-title">${escapeHTML(proy.titulo)}</div>
-          <div class="project-sub">Páginas escritas: ${paginasTotales}</div>
-          <div class="progress-container">
-            <div class="progress-text">
-              <span>Progreso (Meta: 50 pág)</span>
-              <span>${progreso}%</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: ${progreso}%;"></div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    document.getElementById('stat-paginas').innerText = paginasTotales;
-
-    const cardLibro = document.getElementById('card-libro');
-    const libroLeyendo = biblioteca.libros?.find(l => l.estado === 'leyendo');
-    
-    if (libroLeyendo) {
-      document.getElementById('stat-libros').innerText = "1";
-      cardLibro.innerHTML = `
-        <div class="project-block">
-          <div class="project-title">${escapeHTML(libroLeyendo.titulo)}</div>
-          <div class="project-sub">${escapeHTML(libroLeyendo.autor || 'Autor desconocido')}</div>
-          <!-- Como no tenemos número de páginas, ponemos una barra visual al 50% -->
-          <div class="progress-container">
-            <div class="progress-text"><span>En curso</span><span>Leyendo</span></div>
-            <div class="progress-bar"><div class="progress-fill terra" style="width: 50%;"></div></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // ==========================================
-    // RENDERIZAR OBJETIVOS (Plan)
-    // ==========================================
-    function renderObjetivo(idContenedor, nivel, colorClase) {
-      const cont = document.getElementById(idContenedor);
-      const objetivos = plan.objetivos?.filter(o => o.nivel === nivel) || [];
-      
-      if (objetivos.length > 0) {
-        const o = objetivos[objetivos.length - 1]; // El último creado
-        const prog = o.progreso || (o.hecho ? 100 : 0);
-        cont.innerHTML = `
-          <div class="objetivo-mini-title">${escapeHTML(o.titulo)}</div>
-          <div class="objetivo-mini-desc">${o.periodo || 'Sin fecha'}</div>
-          <div class="progress-container" style="margin-top:auto;">
-            <div class="progress-text"><span>Completado</span><span>${prog}%</span></div>
-            <div class="progress-bar"><div class="progress-fill ${colorClase}" style="width: ${prog}%;"></div></div>
-          </div>
-        `;
-      } else {
-        cont.innerHTML = `<p class="vacio" style="font-size:12px;">Sin objetivos.</p>`;
-      }
-    }
-
-    renderObjetivo('card-semanal', 4, '');         // Nivel 4 = Semanal (Verde)
-    renderObjetivo('card-mensual', 3, 'terra');    // Nivel 3 = Mensual (Terracota)
-    renderObjetivo('card-anual', 1, 'dark');       // Nivel 1 = Anual (Oscuro)
   }
 
   initDashboard();
