@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vista General</title>
+<title>Mi Panel</title>
 <link rel="stylesheet" href="styles.css">
 <style>
-  /* Estilos del Dashboard Brutalista */
+  /* ================= ESTILOS DEL DASHBOARD ================= */
   .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; }
   .card { background: var(--cement); border: 2px solid var(--line); box-shadow: 6px 6px 0 var(--shadow); padding: 20px; display: flex; flex-direction: column; }
   .card.bg-paper { background: var(--bg); }
@@ -15,33 +15,42 @@
   .card-link { color: var(--ink); text-decoration: none; font-size: 14px; font-weight: bold; }
   .card-link:hover { color: var(--green); }
 
-  .col-3 { grid-column: span 3; }
+  /* Columnas */
   .col-4 { grid-column: span 4; }
   .col-8 { grid-column: span 8; }
   .col-12 { grid-column: span 12; }
-  @media (max-width: 900px) { .col-3, .col-4, .col-8, .col-12 { grid-column: span 12; } }
+  @media (max-width: 900px) { .col-4, .col-8, .col-12 { grid-column: span 12; } }
 
-  .stat-card { flex-direction: row; align-items: center; gap: 15px; padding: 15px; }
-  .stat-icon { font-size: 28px; background: var(--bg); border: 2px solid var(--line); padding: 8px; box-shadow: 2px 2px 0 var(--shadow); }
-  .stat-info h3 { font-family: Georgia, serif; font-size: 22px; font-weight: bold; line-height: 1; margin-bottom: 4px; }
-  .stat-info p { font-size: 10px; text-transform: uppercase; font-weight: bold; color: var(--muted); letter-spacing: 0.1em; }
-
-  .habit-list { display: flex; flex-direction: column; gap: 12px; }
-  .habit-item { display: flex; align-items: center; gap: 12px; }
-  .habit-check { width: 22px; height: 22px; border: 2px solid var(--line); background: var(--bg); display: flex; align-items: center; justify-content: center; }
+  /* Hábitos */
+  .habit-list { display: flex; flex-direction: column; gap: 10px; }
+  .habit-item { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 5px; border: 1px solid transparent; transition: 0.1s; }
+  .habit-item:hover { background: rgba(42,40,37,0.05); border-color: var(--line); }
+  .habit-check { width: 22px; height: 22px; border: 2px solid var(--line); background: var(--bg); display: flex; align-items: center; justify-content: center; transition: 0.1s; flex-shrink: 0; }
   .habit-check.done { background: var(--green); color: var(--bg); }
   .habit-check.done::after { content: '✓'; font-weight: bold; font-size: 16px; }
   .habit-name { font-size: 14px; font-weight: bold; }
   .habit-name.done { text-decoration: line-through; opacity: 0.6; }
 
+  /* Próximos Eventos */
+  .eventos-list { display: flex; flex-direction: column; gap: 15px; }
+  .evento-card { background: var(--bg); border: 2px solid var(--line); padding: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .evento-card.urgente { border-left: 6px solid var(--terra); }
+  .evento-card.trabajo { border-left: 6px solid var(--blue); }
+  .evento-card.normal { border-left: 6px solid var(--green); }
+  .evento-info h4 { font-family: Georgia, serif; font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+  .evento-info p { font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: bold; }
+  .evento-countdown { background: var(--ink); color: var(--bg); padding: 8px 12px; font-size: 14px; font-weight: bold; border: 2px solid var(--line); min-width: 140px; text-align: center; }
+  .evento-countdown span { color: var(--green); }
+
+  /* Progresos */
   .project-block { margin-bottom: 20px; }
+  .project-block:last-child { margin-bottom: 0; }
   .project-title { font-family: Georgia, serif; font-size: 20px; font-weight: bold; margin-bottom: 4px; }
   .project-sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
-  
   .progress-container { margin-top: 10px; }
   .progress-text { display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
   .progress-bar { height: 18px; background: var(--bg); border: 2px solid var(--line); display: flex; }
-  .progress-fill { height: 100%; background: var(--green); border-right: 2px solid var(--line); transition: width 0.5s; }
+  .progress-fill { height: 100%; background: var(--green); border-right: 2px solid var(--line); }
   .progress-fill.terra { background: var(--terra); }
   .progress-fill.dark { background: var(--ink); }
 
@@ -69,92 +78,52 @@
 
   <div class="dashboard-grid">
     
-    <!-- ESTADÍSTICAS -->
-    <div class="card stat-card col-3 bg-paper">
-      <div class="stat-icon">🔥</div>
-      <div class="stat-info">
-        <h3 id="stat-racha">0</h3>
-        <p>Racha actual</p>
-      </div>
-    </div>
-    <div class="card stat-card col-3">
-      <div class="stat-icon">✅</div>
-      <div class="stat-info">
-        <h3 id="stat-habitos">0/0</h3>
-        <p>Hábitos hoy</p>
-      </div>
-    </div>
-    <div class="card stat-card col-3 bg-paper">
-      <div class="stat-icon">✍️</div>
-      <div class="stat-info">
-        <h3 id="stat-paginas">0</h3>
-        <p>Páginas escritas</p>
-      </div>
-    </div>
-    <div class="card stat-card col-3">
-      <div class="stat-icon">📚</div>
-      <div class="stat-info">
-        <h3 id="stat-libros">0</h3>
-        <p>Leyendo ahora</p>
-      </div>
-    </div>
-
-    <!-- HÁBITOS (Hoy) -->
+    <!-- FILA 1: HÁBITOS Y EVENTOS -->
     <div class="card col-4 bg-paper">
       <div class="card-header">
         <div class="card-title">✅ Hábitos de hoy</div>
         <a href="habitos.html" class="card-link">→</a>
       </div>
       <div class="habit-list" id="lista-habitos">
-        <p class="vacio">Cargando...</p>
+        <p class="vacio">Cargando hábitos...</p>
       </div>
     </div>
 
-    <!-- PROYECTO DE ESCRITURA ACTUAL -->
     <div class="card col-8">
       <div class="card-header">
-        <div class="card-title">✍️ Proyecto de escritura</div>
+        <div class="card-title">⏳ Próximos Eventos</div>
+        <a href="calendario.html" class="card-link">Ver agenda →</a>
+      </div>
+      <div class="eventos-list" id="lista-eventos">
+        <p class="vacio">Cargando agenda...</p>
+      </div>
+    </div>
+
+    <!-- FILA 2: OBJETIVOS -->
+    <div class="card col-4">
+      <div class="card-header"><div class="card-title">🔥 Semanal</div></div>
+      <div id="card-semanal"><p class="vacio">-</p></div>
+    </div>
+
+    <div class="card col-4 bg-paper">
+      <div class="card-header"><div class="card-title" style="color:var(--terra);">📅 Mensual</div></div>
+      <div id="card-mensual"><p class="vacio">-</p></div>
+    </div>
+
+    <div class="card col-4">
+      <div class="card-header"><div class="card-title" style="color:var(--muted);">🎯 Anual</div></div>
+      <div id="card-anual"><p class="vacio">-</p></div>
+    </div>
+
+    <!-- FILA 3: PROYECTO DE ESCRITURA -->
+    <div class="card col-12 bg-paper">
+      <div class="card-header">
+        <div class="card-title">✍️ Proyecto de escritura en curso</div>
         <a href="biblioteca.html" class="card-link">Abrir →</a>
       </div>
       <div id="card-escritura">
         <p class="vacio">No hay proyectos activos.</p>
       </div>
-    </div>
-
-    <!-- LIBRO ACTUAL -->
-    <div class="card col-12 bg-paper">
-      <div class="card-header">
-        <div class="card-title">📚 Libro actual</div>
-        <a href="biblioteca.html" class="card-link">Ver biblioteca →</a>
-      </div>
-      <div id="card-libro">
-        <p class="vacio">No estás leyendo ningún libro.</p>
-      </div>
-    </div>
-
-    <!-- OBJETIVOS TEMPORALES (Plan) -->
-    <div class="card col-4">
-      <div class="card-header">
-        <div class="card-title">🔥 Esta semana</div>
-        <a href="plan.html" class="card-link">→</a>
-      </div>
-      <div id="card-semanal"><p class="vacio">Cargando...</p></div>
-    </div>
-
-    <div class="card col-4 bg-paper">
-      <div class="card-header">
-        <div class="card-title" style="color:var(--terra);">📅 Este mes</div>
-        <a href="plan.html" class="card-link">→</a>
-      </div>
-      <div id="card-mensual"><p class="vacio">Cargando...</p></div>
-    </div>
-
-    <div class="card col-4">
-      <div class="card-header">
-        <div class="card-title" style="color:var(--muted);">🎯 Este año</div>
-        <a href="plan.html" class="card-link">→</a>
-      </div>
-      <div id="card-anual"><p class="vacio">Cargando...</p></div>
     </div>
 
   </div>
@@ -164,152 +133,219 @@
 <script src="app.js"></script>
 <script>
   const escapeHTML = (str) => String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let listaHabitosGlobal = [];
+  let hoyISO = '';
 
   async function initDashboard() {
-    document.body.insertAdjacentHTML('beforeend', bottomNavHTML('dashboard'));
+    const loader = document.getElementById('loader');
     
-    // Configurar fecha
-    const hoyDate = new Date();
-    const opciones = { weekday: 'long', day: 'numeric', month: 'long' };
-    document.getElementById('fecha-hoy').innerText = hoyDate.toLocaleDateString('es-ES', opciones);
-    
-    const session = await checkUser();
-    if(!session) return;
-
-    // ==========================================
-    // PETICIONES A SUPABASE (EN PARALELO)
-    // ==========================================
     try {
-      const [resHabitos, resObjetivos, resLibros, resProyectos] = await Promise.all([
-        supabaseClient.from('habitos').select('*'),
-        supabaseClient.from('objetivos').select('*'),
-        supabaseClient.from('libros').select('*').eq('estado', 'leyendo').limit(1),
-        supabaseClient.from('proyectos').select('*').order('created_at', { ascending: false }).limit(1)
-      ]);
-
-      document.getElementById('loader').style.display = 'none';
-
-      const habitos = resHabitos.data || [];
-      const objetivos = resObjetivos.data || [];
-      const libros = resLibros.data || [];
-      const proyectos = resProyectos.data || [];
-
-      // ==========================================
-      // 1. RENDERIZAR HÁBITOS Y RACHA
-      // ==========================================
-      const hoyISO = hoyDate.toISOString().split('T')[0];
-      const cardHabitos = document.getElementById('lista-habitos');
+      document.body.insertAdjacentHTML('beforeend', bottomNavHTML('dashboard'));
       
-      if (habitos.length > 0) {
-        let completadosHoy = 0;
+      const hoyDate = new Date();
+      hoyISO = iso(hoyDate); // Usamos la función iso() de app.js
+      
+      const opciones = { weekday: 'long', day: 'numeric', month: 'long' };
+      document.getElementById('fecha-hoy').innerText = hoyDate.toLocaleDateString('es-ES', opciones);
+      
+      const session = await checkUser();
+      if(!session) return;
+
+      // ----------------------------------------------------
+      // 1. HÁBITOS
+      // ----------------------------------------------------
+      try {
+        const { data: habitos, error } = await supabaseClient.from('habitos').select('*');
+        if (error) throw error;
         
-        cardHabitos.innerHTML = habitos.slice(0, 5).map(h => {
-          const hecho = h.dias && h.dias[hoyISO];
-          if (hecho) completadosHoy++;
-          return `
-            <div class="habit-item">
-              <div class="habit-check ${hecho ? 'done' : ''}"></div>
-              <div class="habit-name ${hecho ? 'done' : ''}">${escapeHTML(h.nombre)}</div>
-            </div>
-          `;
-        }).join('');
+        listaHabitosGlobal = habitos || [];
+        const cardHabitos = document.getElementById('lista-habitos');
         
-        document.getElementById('stat-habitos').innerText = `${completadosHoy}/${habitos.length}`;
+        if (listaHabitosGlobal.length > 0) {
+          cardHabitos.innerHTML = listaHabitosGlobal.slice(0, 6).map(h => {
+            const hecho = h.dias && h.dias[hoyISO];
+            return `
+              <div class="habit-item" onclick="toggleHabito('${h.id}')">
+                <div class="habit-check ${hecho ? 'done' : ''}"></div>
+                <div class="habit-name ${hecho ? 'done' : ''}">${escapeHTML(h.nombre)}</div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          cardHabitos.innerHTML = '<p class="vacio">Sin hábitos configurados.</p>';
+        }
+      } catch(e) { console.error("Error hábitos:", e); }
+
+      // ----------------------------------------------------
+      // 2. PRÓXIMOS EVENTOS Y CUENTA ATRÁS
+      // ----------------------------------------------------
+      try {
+        const { data: eventos, error } = await supabaseClient.from('eventos').select('*').gte('fecha', hoyISO).order('fecha', { ascending: true }).order('hora_inicio', { ascending: true });
+        if (error) throw error;
         
-        // Calcular racha
-        let racha = 0;
-        const primerHabito = habitos[0];
-        if(primerHabito && primerHabito.dias) {
-          let d = new Date();
-          if(!primerHabito.dias[hoyISO]) d.setDate(d.getDate() - 1);
-          while(primerHabito.dias[d.toISOString().split('T')[0]]) {
-            racha++;
-            d.setDate(d.getDate() - 1);
+        const cardEventos = document.getElementById('lista-eventos');
+        
+        if (eventos && eventos.length > 0) {
+          const proximos = eventos.slice(0, 2);
+          
+          cardEventos.innerHTML = proximos.map((ev, index) => {
+            let colorClass = 'normal';
+            if (ev.color === 'terracota') colorClass = 'urgente';
+            if (ev.color === 'azul') colorClass = 'trabajo';
+
+            const horaTexto = ev.hora_inicio ? ev.hora_inicio.substring(0, 5) : '';
+            // Formatear la fecha para mostrarla bonita (DD/MM/YYYY)
+            const [a, m, d] = ev.fecha.split('-');
+            
+            return `
+              <div class="evento-card ${colorClass}">
+                <div class="evento-info">
+                  <h4>${escapeHTML(ev.titulo)}</h4>
+                  <p>${d}/${m}/${a} a las ${horaTexto}</p>
+                </div>
+                <div class="evento-countdown" id="countdown-${index}">Calculando...</div>
+              </div>
+            `;
+          }).join('');
+
+          // Actualizar relojes cada segundo
+          setInterval(() => {
+            proximos.forEach((ev, index) => {
+              const hora = ev.hora_inicio || '00:00';
+              // Formato requerido: YYYY-MM-DDTHH:MM:00
+              const fechaObjetivo = new Date(`${ev.fecha}T${hora}:00`);
+              actualizarCountdown(`countdown-${index}`, fechaObjetivo);
+            });
+          }, 1000);
+          
+          // Ejecutar de inmediato
+          proximos.forEach((ev, index) => {
+            const hora = ev.hora_inicio || '00:00';
+            const fechaObjetivo = new Date(`${ev.fecha}T${hora}:00`);
+            actualizarCountdown(`countdown-${index}`, fechaObjetivo);
+          });
+
+        } else {
+          cardEventos.innerHTML = '<p class="vacio">No hay eventos próximos.</p>';
+        }
+      } catch(e) { console.error("Error eventos:", e); }
+
+      // ----------------------------------------------------
+      // 3. OBJETIVOS (PLAN)
+      // ----------------------------------------------------
+      try {
+        const { data: objetivos, error } = await supabaseClient.from('objetivos').select('*');
+        if (error) throw error;
+
+        function renderObjetivo(idContenedor, nivel, colorClase) {
+          const cont = document.getElementById(idContenedor);
+          const objsFiltrados = (objetivos || []).filter(o => o.nivel === nivel);
+          
+          if (objsFiltrados.length > 0) {
+            const o = objsFiltrados.sort((a,b) => b.id - a.id)[0];
+            const prog = o.progreso || (o.hecho ? 100 : 0);
+            cont.innerHTML = `
+              <div class="objetivo-mini-title">${escapeHTML(o.titulo)}</div>
+              <div class="objetivo-mini-desc">${o.periodo || 'Sin fecha'}</div>
+              <div class="progress-container" style="margin-top:auto;">
+                <div class="progress-text"><span>Completado</span><span>${prog}%</span></div>
+                <div class="progress-bar"><div class="progress-fill ${colorClase}" style="width: ${prog}%;"></div></div>
+              </div>
+            `;
+          } else {
+            cont.innerHTML = `<p class="vacio">Sin objetivos.</p>`;
           }
         }
-        document.getElementById('stat-racha').innerText = `${racha} Días`;
-      } else {
-        cardHabitos.innerHTML = '<p class="vacio">Sin hábitos.</p>';
-      }
 
-      // ==========================================
-      // 2. RENDERIZAR ESCRITURA
-      // ==========================================
-      const cardEscritura = document.getElementById('card-escritura');
-      if (proyectos.length > 0) {
-        const proy = proyectos[0];
-        const paginasTotales = proy.paginas ? proy.paginas.length : 0;
-        const progreso = Math.min(Math.round((paginasTotales / 50) * 100), 100); // Meta: 50 páginas
+        renderObjetivo('card-semanal', 4, '');         
+        renderObjetivo('card-mensual', 3, 'terra');    
+        renderObjetivo('card-anual', 1, 'dark');       
+      } catch(e) { console.error("Error objetivos:", e); }
+
+      // ----------------------------------------------------
+      // 4. PROYECTO DE ESCRITURA
+      // ----------------------------------------------------
+      try {
+        const { data: proyectos, error } = await supabaseClient.from('proyectos').select('*').order('created_at', { ascending: false }).limit(1);
+        if (error) throw error;
         
-        cardEscritura.innerHTML = `
-          <div class="project-block">
-            <div class="project-title">${escapeHTML(proy.titulo)}</div>
-            <div class="project-sub">Páginas escritas: ${paginasTotales}</div>
-            <div class="progress-container">
-              <div class="progress-text">
-                <span>Progreso (Meta: 50 pág)</span>
-                <span>${progreso}%</span>
+        const cardEscritura = document.getElementById('card-escritura');
+        if (proyectos && proyectos.length > 0) {
+          const proy = proyectos[0];
+          const paginasTotales = proy.paginas ? proy.paginas.length : 0;
+          const progreso = Math.min(Math.round((paginasTotales / 50) * 100), 100); 
+          
+          cardEscritura.innerHTML = `
+            <div class="project-block">
+              <div class="project-title">${escapeHTML(proy.titulo)}</div>
+              <div class="project-sub">Páginas escritas: ${paginasTotales}</div>
+              <div class="progress-container">
+                <div class="progress-text"><span>Progreso (Meta: 50 pág)</span><span>${progreso}%</span></div>
+                <div class="progress-bar"><div class="progress-fill" style="width: ${progreso}%;"></div></div>
               </div>
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: ${progreso}%;"></div>
-              </div>
-            </div>
-          </div>
-        `;
-        document.getElementById('stat-paginas').innerText = paginasTotales;
-      }
-
-      // ==========================================
-      // 3. RENDERIZAR LIBRO ACTUAL
-      // ==========================================
-      const cardLibro = document.getElementById('card-libro');
-      if (libros.length > 0) {
-        const libro = libros[0];
-        document.getElementById('stat-libros').innerText = "1";
-        cardLibro.innerHTML = `
-          <div class="project-block">
-            <div class="project-title">${escapeHTML(libro.titulo)}</div>
-            <div class="project-sub">${escapeHTML(libro.autor || 'Autor desconocido')}</div>
-            <div class="progress-container">
-              <div class="progress-text"><span>En curso</span><span>Leyendo</span></div>
-              <div class="progress-bar"><div class="progress-fill terra" style="width: 50%;"></div></div>
-            </div>
-          </div>
-        `;
-      }
-
-      // ==========================================
-      // 4. RENDERIZAR OBJETIVOS (Plan)
-      // ==========================================
-      function renderObjetivo(idContenedor, nivel, colorClase) {
-        const cont = document.getElementById(idContenedor);
-        const objsFiltrados = objetivos.filter(o => o.nivel === nivel);
-        
-        if (objsFiltrados.length > 0) {
-          // Coger el más reciente
-          const o = objsFiltrados.sort((a,b) => b.id - a.id)[0];
-          const prog = o.progreso || (o.hecho ? 100 : 0);
-          cont.innerHTML = `
-            <div class="objetivo-mini-title">${escapeHTML(o.titulo)}</div>
-            <div class="objetivo-mini-desc">${o.fecha || 'Sin fecha'}</div>
-            <div class="progress-container" style="margin-top:auto;">
-              <div class="progress-text"><span>Completado</span><span>${prog}%</span></div>
-              <div class="progress-bar"><div class="progress-fill ${colorClase}" style="width: ${prog}%;"></div></div>
             </div>
           `;
-        } else {
-          cont.innerHTML = `<p class="vacio">Sin objetivos.</p>`;
         }
-      }
+      } catch(e) { console.error("Error proyectos:", e); }
 
-      renderObjetivo('card-semanal', 4, '');         // Nivel 4 = Semanal (Verde)
-      renderObjetivo('card-mensual', 3, 'terra');    // Nivel 3 = Mensual (Terracota)
-      renderObjetivo('card-anual', 1, 'dark');       // Nivel 1 = Anual (Oscuro)
+      // Ocultar Loader al terminar todo
+      loader.style.display = 'none';
 
     } catch (err) {
-      console.error(err);
-      document.getElementById('loader').innerText = "Error al conectar con la base de datos.";
+      console.error("Error crítico:", err);
+      loader.innerText = "Error de conexión. Revisa la consola.";
     }
+  }
+
+  // ==========================================
+  // INTERACCIÓN CON HÁBITOS
+  // ==========================================
+  window.toggleHabito = async function(id) {
+    const habito = listaHabitosGlobal.find(h => h.id == id);
+    if (!habito) return;
+
+    const nuevosDias = { ...(habito.dias || {}) };
+    if (nuevosDias[hoyISO]) delete nuevosDias[hoyISO];
+    else nuevosDias[hoyISO] = true;
+
+    habito.dias = nuevosDias;
+    
+    // Actualizar UI al instante (Optimistic UI)
+    document.querySelectorAll(`.habit-item`).forEach(el => {
+        if (el.getAttribute('onclick') && el.getAttribute('onclick').includes(id)) {
+            el.querySelector('.habit-check').classList.toggle('done');
+            el.querySelector('.habit-name').classList.toggle('done');
+        }
+    });
+
+    // Guardar en Supabase en segundo plano
+    const { error } = await supabaseClient.from('habitos').update({ dias: nuevosDias }).eq('id', id);
+    if (error) alert("Error al guardar el hábito en la nube.");
+  };
+
+  // ==========================================
+  // LÓGICA DE LA CUENTA ATRÁS
+  // ==========================================
+  function actualizarCountdown(idElemento, fechaObjetivo) {
+    const el = document.getElementById(idElemento);
+    if (!el) return;
+
+    const ahora = new Date();
+    const diferencia = fechaObjetivo - ahora;
+
+    if (isNaN(diferencia)) { el.innerHTML = "Error"; return; }
+    if (diferencia <= 0) { el.innerHTML = "¡Ahora!"; return; }
+
+    const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+    const horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+    const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+
+    let texto = '';
+    if (dias > 0) texto += `<span>${dias}d</span> `;
+    texto += `<span>${horas}h</span> <span>${minutos}m</span> <span>${segundos}s</span>`;
+
+    el.innerHTML = texto;
   }
 
   initDashboard();
